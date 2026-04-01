@@ -9,10 +9,21 @@
       "pkg": "YF0001",
       "username": "YF0001",
       "createdAt": "2026-04-01T20:55:59.271Z"
+    },
+    {
+      "id": 2,
+      "firstName": "Media",
+      "lastName": "Everything",
+      "email": "mediaeverything@gmail.com",
+      "password": "$2a$10$Wab5xUumxpgG8nap1at0ke0PYsKoZyXs.RWvDXV0/aheSN14XBLSq",
+      "pkg": "ME0001",
+      "username": "ME0001",
+      "createdAt": "2026-04-01T22:23:45.557Z"
     }
   ],
   "pkgCounters": {
-    "YF": 1
+    "YF": 1,
+    "ME": 1
   },
-  "nextId": 2
+  "nextId": 3
 }

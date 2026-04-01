@@ -1,0 +1,18 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "firstName": "Yeriel",
+      "lastName": "Fortunato",
+      "email": "promowave247@gmail.com",
+      "password": "$2a$10$iYm8UYQiUh4DVoftJUuwIe8Bhs9AGBuGxok7WBYKd084HriMiEq3i",
+      "pkg": "YF0001",
+      "username": "YF0001",
+      "createdAt": "2026-04-01T20:55:59.271Z"
+    }
+  ],
+  "pkgCounters": {
+    "YF": 1
+  },
+  "nextId": 2
+}

@@ -1,0 +1,21 @@
+{
+  "name": "m3-hub-server",
+  "version": "1.0.0",
+  "description": "M3 Hub Multiplayer Backend",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "@colyseus/monitor": "^0.15.0",
+    "bcryptjs": "^2.4.3",
+    "colyseus": "^0.15.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

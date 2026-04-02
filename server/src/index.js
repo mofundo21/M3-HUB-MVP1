@@ -37,6 +37,7 @@ const gameServer = new Server({
     pingInterval: 5000,
     pingTimeout: 10000,
   }),
+  graceTimeout: 60000,
 });
 
 gameServer.define('hub', HubRoom);

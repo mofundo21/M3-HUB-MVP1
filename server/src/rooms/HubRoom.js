@@ -40,14 +40,18 @@ class HubRoom extends Room {
   }
 
   onAuth(client, options) {
-    // options.token can be passed from client on join
+    // Allow guest login without token
     if (!options || !options.token) {
-      throw new Error('No token provided');
+      console.log('[HubRoom] Guest login (no token)');
+      return { username: 'Guest', pkg: 'GUEST', isGuest: true };
     }
+    
     try {
       const decoded = jwt.verify(options.token, JWT_SECRET);
+      console.log('[HubRoom] Authenticated user:', decoded.username);
       return decoded;
     } catch (e) {
+      console.error('[HubRoom] Auth failed:', e.message);
       throw new Error('Invalid token');
     }
   }

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
+const API_BASE_URL = 'https://m3-hub-mvp1-production.up.railway.app';
+
 const inputStyle = {
   width: '100%',
   padding: '10px 12px',
@@ -40,7 +42,7 @@ export default function LoginPopup({ onAuth }) {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post('/api/auth/login', {
+      const res = await axios.post(`${API_BASE_URL}/api/auth/login`, {
         email: form.email,
         password: form.password,
       });
@@ -57,7 +59,7 @@ export default function LoginPopup({ onAuth }) {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post('/api/auth/register', {
+      const res = await axios.post(`${API_BASE_URL}/api/auth/register`, {
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
@@ -75,7 +77,7 @@ export default function LoginPopup({ onAuth }) {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post('/api/auth/guest');
+      const res = await axios.post(`${API_BASE_URL}/api/auth/guest`);
       onAuth(res.data.token, res.data.user);
     } catch (err) {
       setError('Guest login failed');

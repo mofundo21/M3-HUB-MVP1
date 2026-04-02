@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import Avatar from './Avatar';
 import Zone from './Zone';
 
-const COLYSEUS_URL = 'https://m3-hub-mvp1-production.up.railway.app';
+const COLYSEUS_URL = 'wss://m3-hub-mvp1-production.up.railway.app';
 const MOVE_SPEED = 0.08;
 const UPDATE_RATE = 50; // ms between server position updates
 

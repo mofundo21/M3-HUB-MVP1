@@ -13,12 +13,11 @@ const PORT = process.env.PORT || 3001;
 
 const app = express();
 
-// Update CORS to allow your deployed frontend!
 app.use(cors({
   origin: [
     'http://localhost:5173', 
     'http://localhost:3000',
-    'https://bejewelled-quokka-402582.netlify.app'  // ← ADD THIS LINE
+    'https://bejewelled-quokka-402582.netlify.app'
   ],
   credentials: true,
 }));
@@ -43,4 +42,15 @@ const gameServer = new Server({
   }),
 });
 
-gameS
+gameServer.define('hub', HubRoom);
+
+// Colyseus monitor (admin UI at /colyseus)
+app.use('/colyseus', monitor());
+
+// ⭐ KEY FIX: Bind to 0.0.0.0 so it's accessible from outside!
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`\n🚀 M3 Hub Server running on http://0.0.0.0:${PORT}`);
+  console.log(`   Colyseus monitor: http://localhost:${PORT}/colyseus`);
+  console.log(`   Health check:     http://localhost:${PORT}/health\n`);
+  gameServer.listen(PORT);
+});

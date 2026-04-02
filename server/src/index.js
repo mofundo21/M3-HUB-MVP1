@@ -4,33 +4,33 @@ const http = require('http');
 const { Server } = require('colyseus');
 const { WebSocketTransport } = require('@colyseus/ws-transport');
 const { monitor } = require('@colyseus/monitor');
-
+ 
 const authRoutes = require('./routes/auth');
 const { HubRoom } = require('./rooms/HubRoom');
 const { getDb } = require('./utils/db');
-
+ 
 const PORT = process.env.PORT || 3001;
-
+ 
 const app = express();
-
+ 
 // CORS - Allow all origins for debugging
 app.use(cors({
   origin: '*',
   credentials: false,
 }));
-
+ 
 app.use(express.json());
-
+ 
 getDb();
-
+ 
 // ✅ ALL ROUTES FIRST (BEFORE creating httpServer)
 app.use('/api/auth', authRoutes);
-
+ 
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
-
+ 
 // ✅ THEN create server
 const httpServer = http.createServer(app);
-
+ 
 const gameServer = new Server({
   transport: new WebSocketTransport({ 
     server: httpServer,
@@ -38,11 +38,11 @@ const gameServer = new Server({
     pingTimeout: 10000,
   }),
 });
-
+ 
 gameServer.define('hub', HubRoom);
-
+ 
 app.use('/colyseus', monitor());
-
+ 
 // ⭐ ONLY call httpServer.listen() - NOT gameServer.listen()!
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 M3 Hub Server running on http://0.0.0.0:${PORT}`);

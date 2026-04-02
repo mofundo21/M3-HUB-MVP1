@@ -23,15 +23,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Init DB on startup
 getDb();
 
-// REST routes
 app.use('/api/auth', authRoutes);
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
-// Colyseus setup
 const httpServer = http.createServer(app);
 
 const gameServer = new Server({
@@ -44,13 +41,11 @@ const gameServer = new Server({
 
 gameServer.define('hub', HubRoom);
 
-// Colyseus monitor (admin UI at /colyseus)
 app.use('/colyseus', monitor());
 
-// ⭐ KEY FIX: Bind to 0.0.0.0 so it's accessible from outside!
+// ⭐ ONLY call httpServer.listen() - NOT gameServer.listen()!
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 M3 Hub Server running on http://0.0.0.0:${PORT}`);
   console.log(`   Colyseus monitor: http://localhost:${PORT}/colyseus`);
   console.log(`   Health check:     http://localhost:${PORT}/health\n`);
-  gameServer.listen(PORT);
 });

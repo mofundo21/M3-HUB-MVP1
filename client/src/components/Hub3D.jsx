@@ -82,8 +82,8 @@ function HubScene({ players, mySessionId, onMove, onZoneEnter }) {
       {/* Lighting */}
       <ambientLight intensity={0.3} color="#0a0a2e" />
       <pointLight position={[0, 8, 0]} intensity={1.5} color="#00ffff" distance={30} />
-      <pointLight position={[15, 6, 0]} intensity={1} color="#00ff00" distance={20} />
-      <pointLight position={[-15, 6, 0]} intensity={1} color="#ffff00" distance={20} />
+      <pointLight position={[8, 6, 0]} intensity={1} color="#00ff00" distance={16} />
+      <pointLight position={[-8, 6, 0]} intensity={1} color="#ffff00" distance={16} />
       <pointLight position={[0, 6, 0]} intensity={0.8} color="#ff00ff" distance={20} />
 
       {/* Ground plane */}
@@ -97,8 +97,8 @@ function HubScene({ players, mySessionId, onMove, onZoneEnter }) {
 
       {/* Zones */}
       <Zone name="portal" position={[0, 0, 0]} color="#ff00ff" label="PORTAL" onEnter={onZoneEnter} />
-      <Zone name="store" position={[15, 0, 0]} color="#00ff00" label="STORE" onEnter={onZoneEnter} />
-      <Zone name="gallery" position={[-15, 0, 0]} color="#ffff00" label="GALLERY" onEnter={onZoneEnter} />
+      <Zone name="store" position={[8, 0, 0]} color="#00ff00" label="STORE" onEnter={onZoneEnter} />
+      <Zone name="gallery" position={[-8, 0, 0]} color="#ffff00" label="GALLERY" onEnter={onZoneEnter} />
 
       {/* Player controller (local) */}
       <PlayerController sessionId={mySessionId} players={players} onMove={onMove} />

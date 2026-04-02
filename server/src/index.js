@@ -23,10 +23,12 @@ app.use(express.json());
 
 getDb();
 
+// ✅ ALL ROUTES FIRST (BEFORE creating httpServer)
 app.use('/api/auth', authRoutes);
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
+// ✅ THEN create server
 const httpServer = http.createServer(app);
 
 const gameServer = new Server({

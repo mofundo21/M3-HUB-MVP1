@@ -36,10 +36,11 @@ router.post('/login', async (req, res) => {
  
     // TODO: Check password against hashed DB password
     const pkg = 'PKG' + Math.random().toString(36).substr(2, 9).toUpperCase();
-    const token = jwt.sign({ email, pkg }, JWT_SECRET, { expiresIn: '7d' });
- 
+    const username = email.split('@')[0];
+    const token = jwt.sign({ email, username, pkg, isGuest: false }, JWT_SECRET, { expiresIn: '7d' });
+
     console.log(`[AUTH] User logged in: ${email}`);
-    res.json({ token, user: { email, pkg } });
+    res.json({ token, user: { email, username, pkg, isGuest: false } });
   } catch (e) {
     console.error('[AUTH] Login error:', e.message);
     res.status(500).json({ error: e.message });

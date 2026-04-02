@@ -13,8 +13,13 @@ const PORT = process.env.PORT || 3001;
 
 const app = express();
 
+// Update CORS to allow your deployed frontend!
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: [
+    'http://localhost:5173', 
+    'http://localhost:3000',
+    'https://bejewelled-quokka-402582.netlify.app'  // ← ADD THIS LINE
+  ],
   credentials: true,
 }));
 app.use(express.json());
@@ -31,16 +36,11 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date().toIS
 const httpServer = http.createServer(app);
 
 const gameServer = new Server({
-  transport: new WebSocketTransport({ server: httpServer }),
+  transport: new WebSocketTransport({ 
+    server: httpServer,
+    pingInterval: 5000,
+    pingTimeout: 10000,
+  }),
 });
 
-gameServer.define('hub', HubRoom);
-
-// Colyseus monitor (admin UI at /colyseus)
-app.use('/colyseus', monitor());
-
-gameServer.listen(PORT).then(() => {
-  console.log(`\n🚀 M3 Hub Server running on http://localhost:${PORT}`);
-  console.log(`   Colyseus monitor: http://localhost:${PORT}/colyseus`);
-  console.log(`   Health check:     http://localhost:${PORT}/health\n`);
-});
+gameS

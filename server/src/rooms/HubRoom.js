@@ -4,18 +4,7 @@ const { Schema, MapSchema, type } = require('@colyseus/schema');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-class PlayerState extends Schema {
-  constructor(username, pkg) {
-    super();
-    this.username = username;
-    this.pkg = pkg;
-    this.x = 0;
-    this.y = 0;
-    this.z = 0;
-    this.rotY = 0;
-    this.zone = '';
-  }
-}
+class PlayerState extends Schema {}
 type('string')(PlayerState.prototype, 'username');
 type('string')(PlayerState.prototype, 'pkg');
 type('number')(PlayerState.prototype, 'x');
@@ -24,18 +13,14 @@ type('number')(PlayerState.prototype, 'z');
 type('number')(PlayerState.prototype, 'rotY');
 type('string')(PlayerState.prototype, 'zone');
 
-class HubRoomState extends Schema {
-  constructor() {
-    super();
-    this.players = new MapSchema();
-  }
-}
-type(MapSchema)(HubRoomState.prototype, 'players', PlayerState);
+class HubRoomState extends Schema {}
+type(PlayerState)(HubRoomState.prototype, 'players', MapSchema);
 
 class HubRoom extends Room {
   onCreate(options) {
     console.log('[HubRoom] Room created');
     this.setState(new HubRoomState());
+    this.state.players = new MapSchema();
     this.maxClients = 100;
   }
 
@@ -60,7 +45,15 @@ class HubRoom extends Room {
   onJoin(client, options, auth) {
     console.log('[HubRoom] onJoin called, auth:', auth);
     
-    const player = new PlayerState(auth.username, auth.pkg);
+    const player = new PlayerState();
+    player.username = auth.username;
+    player.pkg = auth.pkg;
+    player.x = 0;
+    player.y = 0;
+    player.z = 0;
+    player.rotY = 0;
+    player.zone = '';
+    
     this.state.players.set(client.sessionId, player);
 
     console.log(`[HubRoom] Player joined: ${auth.pkg} (${client.sessionId})`);

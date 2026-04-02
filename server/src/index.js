@@ -14,8 +14,8 @@ const PORT = process.env.PORT || 3001;
 const app = express();
 
 app.use(cors({
-  origin: '*',
-  credentials: false,
+  origin: true,
+  credentials: true,
 }));
 
 app.use(express.json());
@@ -34,10 +34,10 @@ const httpServer = http.createServer(app);
 const gameServer = new Server({
   transport: new WebSocketTransport({
     server: httpServer,
-    pingInterval: 5000,
-    pingTimeout: 10000,
+    pingInterval: 15000,
+    pingTimeout: 30000,
   }),
-  graceTimeout: 60000,
+  graceTimeout: 120000,
 });
 
 gameServer.define('hub', HubRoom);

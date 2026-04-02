@@ -1,98 +1,62 @@
-const { Room, Client } = require('colyseus');
+const { Room } = require('colyseus');
 const jwt = require('jsonwebtoken');
-const { Schema, MapSchema, type } = require('@colyseus/schema');
+const { HubRoomState, PlayerState } = require('./RoomState');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-class PlayerState extends Schema {}
-type('string')(PlayerState.prototype, 'username');
-type('string')(PlayerState.prototype, 'pkg');
-type('number')(PlayerState.prototype, 'x');
-type('number')(PlayerState.prototype, 'y');
-type('number')(PlayerState.prototype, 'z');
-type('number')(PlayerState.prototype, 'rotY');
-type('string')(PlayerState.prototype, 'zone');
-
-class HubRoomState extends Schema {}
-type(PlayerState)(HubRoomState.prototype, 'players', MapSchema);
-
 class HubRoom extends Room {
+  seatReservationTime = 15;
+
   onCreate(options) {
-    console.log('[HubRoom] Room created');
     this.setState(new HubRoomState());
-    this.state.players = new MapSchema();
-    this.maxClients = 100;
+
+    this.onMessage('move', (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (!player) return;
+      if (typeof data.x === 'number') player.x = data.x;
+      if (typeof data.y === 'number') player.y = data.y;
+      if (typeof data.z === 'number') player.z = data.z;
+      if (typeof data.rotY === 'number') player.rotY = data.rotY;
+    });
+
+    this.onMessage('zone', (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (!player) return;
+      if (typeof data.zone === 'string') player.zone = data.zone;
+    });
   }
 
   onAuth(client, options) {
-    console.log('[HubRoom] onAuth called with options:', options);
-    
+    const token = options.token;
+    if (!token) throw new Error('No token provided');
     try {
-      if (!options || !options.token) {
-        console.log('[HubRoom] Guest login (no token)');
-        return { username: 'Guest', pkg: 'GUEST', isGuest: true };
-      }
-
-      const decoded = jwt.verify(options.token, JWT_SECRET);
-      console.log('[HubRoom] Token verified for:', decoded.pkg);
-      return decoded;
+      return jwt.verify(token, JWT_SECRET);
     } catch (e) {
-      console.error('[HubRoom] Token verification failed:', e.message);
-      throw new Error('Invalid token');
+      throw new Error('Invalid or expired token');
     }
   }
 
   onJoin(client, options, auth) {
-    console.log('[HubRoom] onJoin called, auth:', auth);
-    
     const player = new PlayerState();
-    player.username = auth.username;
-    player.pkg = auth.pkg;
-    player.x = 0;
+    player.username = auth.username || 'Unknown';
+    player.pkg = auth.pkg || '';
+    player.isGuest = auth.isGuest || false;
+    player.x = (Math.random() - 0.5) * 4;
     player.y = 0;
-    player.z = 0;
-    player.rotY = 0;
-    player.zone = '';
-    
+    player.z = (Math.random() - 0.5) * 4;
     this.state.players.set(client.sessionId, player);
-
-    console.log(`[HubRoom] Player joined: ${auth.pkg} (${client.sessionId})`);
-
-    this.broadcast('player-joined', {
-      sessionId: client.sessionId,
-      username: auth.username,
-      pkg: auth.pkg,
-    });
-  }
-
-  onMessage(client, type, message) {
-    console.log(`[HubRoom] Message from ${client.sessionId}:`, type, message);
-    
-    const player = this.state.players.get(client.sessionId);
-    if (!player) return;
-
-    if (type === 'move') {
-      player.x = message.x || 0;
-      player.y = message.y || 0;
-      player.z = message.z || 0;
-      player.rotY = message.rotY || 0;
-    } else if (type === 'zone') {
-      player.zone = message.zone || '';
-    }
+    console.log(`[HubRoom] ${player.username} joined (${client.sessionId})`);
   }
 
   onLeave(client, consented) {
+    const player = this.state.players.get(client.sessionId);
+    console.log(`[HubRoom] ${player ? player.username : client.sessionId} left`);
     this.state.players.delete(client.sessionId);
-    console.log(`[HubRoom] Player left: ${client.sessionId}`);
-
-    this.broadcast('player-left', {
-      sessionId: client.sessionId,
-    });
   }
 
   onDispose() {
-    console.log('[HubRoom] Room disposed');
+    console.log('[HubRoom] Disposed');
   }
 }
 
-module.exports = { HubRoom, HubRoomState, PlayerState };
+module.exports = { HubRoom };

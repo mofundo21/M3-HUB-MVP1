@@ -144,7 +144,9 @@ export default function Hub3D({ authUser, onZoneEnter }) {
       .then((room) => {
         roomRef.current = room;
         setMySessionId(room.sessionId);
+        console.log('[Colyseus] joinOrCreate callback fired');
         setConnected(true);
+        console.log('[Colyseus] Connected:', true);
         setConnError(null);
         console.log('[Colyseus] Joined hub, sessionId:', room.sessionId);
 
@@ -257,6 +259,7 @@ export default function Hub3D({ authUser, onZoneEnter }) {
         )}
       </div>
 
+      {console.log('[Colyseus] Canvas should render now, connected:', connected)}
       <Canvas
         camera={{ position: [0, 10, 8], fov: 60 }}
         gl={{ antialias: true }}

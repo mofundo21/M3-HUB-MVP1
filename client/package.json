@@ -1,6 +1,6 @@
 {
   "name": "m3-hub-client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "M3 Hub Multiplayer Frontend",
   "type": "module",
   "scripts": {

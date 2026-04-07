@@ -149,6 +149,28 @@ export default function LoginPopup({ onAuth }) {
     firstInputRef.current?.focus();
   }, [mode]);
 
+  const validate = () => {
+    if (!email.includes('@') || !email.includes('.')) {
+      setError('Enter a valid email address.');
+      return false;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return false;
+    }
+    if (mode === 'register') {
+      if (username.length < 3 || username.length > 20) {
+        setError('Username must be 3–20 characters.');
+        return false;
+      }
+      if (/\s/.test(username)) {
+        setError('Username cannot contain spaces.');
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !loading) {
       mode === 'login' ? handleLogin() : handleRegister();
@@ -157,6 +179,7 @@ export default function LoginPopup({ onAuth }) {
 
   const handleLogin = async () => {
     setError('');
+    if (!validate()) return;
     setLoading(true);
     try {
       const res = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
@@ -170,6 +193,7 @@ export default function LoginPopup({ onAuth }) {
 
   const handleRegister = async () => {
     setError('');
+    if (!validate()) return;
     setLoading(true);
     try {
       const res = await axios.post(`${API_BASE_URL}/api/auth/register`, { email, username, password });

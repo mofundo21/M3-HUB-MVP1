@@ -126,6 +126,8 @@ export default function Hub3D({ authUser, onZoneEnter }) {
   const [players, setPlayers] = useState(new Map());
   const [mySessionId, setMySessionId] = useState(null);
   const [connected, setConnected] = useState(false);
+  const [connError, setConnError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
   const roomRef = useRef(null);
 
   // Connect to Colyseus
@@ -135,6 +137,7 @@ export default function Hub3D({ authUser, onZoneEnter }) {
     const token = localStorage.getItem('m3_token');
     if (!token) return;
 
+    setConnError(null);
     const client = new Client(COLYSEUS_URL);
 
     client.joinOrCreate('hub', { token })
@@ -142,6 +145,7 @@ export default function Hub3D({ authUser, onZoneEnter }) {
         roomRef.current = room;
         setMySessionId(room.sessionId);
         setConnected(true);
+        setConnError(null);
         console.log('[Colyseus] Joined hub, sessionId:', room.sessionId);
 
         const updatePlayers = () => {
@@ -169,11 +173,28 @@ export default function Hub3D({ authUser, onZoneEnter }) {
           updatePlayers();
         });
 
+        room.onLeave((code) => {
+          setConnected(false);
+          setConnError(`Disconnected (code ${code}). Server may be restarting.`);
+        });
+
+        room.onError((code, message) => {
+          setConnected(false);
+          setConnError(`Connection error: ${message || code}`);
+        });
+
         // Initial state
         updatePlayers();
       })
       .catch((err) => {
         console.error('[Colyseus] Failed to join:', err);
+        setConnected(false);
+        const msg = err?.message || String(err);
+        if (msg.includes('token') || msg.includes('auth') || msg.includes('jwt')) {
+          setConnError('Auth failed — try logging out and back in.');
+        } else {
+          setConnError('Could not reach server. Is it running?');
+        }
       });
 
     return () => {
@@ -182,7 +203,7 @@ export default function Hub3D({ authUser, onZoneEnter }) {
         roomRef.current = null;
       }
     };
-  }, [authUser]);
+  }, [authUser, retryCount]);
 
   const handleMove = useCallback((data) => {
     if (roomRef.current) {
@@ -202,16 +223,38 @@ export default function Hub3D({ authUser, onZoneEnter }) {
       {/* Connection status */}
       <div style={{
         position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
-        background: connected ? 'rgba(0,255,0,0.15)' : 'rgba(255,0,0,0.15)',
-        border: `1px solid ${connected ? '#00ff00' : '#ff0000'}`,
-        color: connected ? '#00ff00' : '#ff4444',
-        padding: '4px 14px',
-        borderRadius: 20,
-        fontSize: 11,
-        userSelect: 'none',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
         zIndex: 10,
       }}>
-        {connected ? '● ONLINE' : '○ CONNECTING...'}
+        <div style={{
+          background: connected ? 'rgba(0,255,0,0.15)' : connError ? 'rgba(255,0,0,0.2)' : 'rgba(255,165,0,0.15)',
+          border: `1px solid ${connected ? '#00ff00' : connError ? '#ff4444' : '#ff9900'}`,
+          color: connected ? '#00ff00' : connError ? '#ff4444' : '#ff9900',
+          padding: '4px 14px',
+          borderRadius: 20,
+          fontSize: 11,
+          userSelect: 'none',
+          whiteSpace: 'nowrap',
+        }}>
+          {connected ? '● ONLINE' : connError ? '● DISCONNECTED' : '○ CONNECTING...'}
+        </div>
+        {connError && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <div style={{ fontSize: 10, color: '#ff6666', background: 'rgba(0,0,0,0.7)', padding: '3px 10px', borderRadius: 4, maxWidth: 260, textAlign: 'center' }}>
+              {connError}
+            </div>
+            <button
+              onClick={() => setRetryCount(n => n + 1)}
+              style={{
+                background: 'rgba(255,0,0,0.15)', border: '1px solid #ff4444',
+                color: '#ff4444', cursor: 'pointer', padding: '4px 14px',
+                borderRadius: 12, fontSize: 10, fontFamily: 'inherit', letterSpacing: 1,
+              }}
+            >
+              ↺ RETRY
+            </button>
+          </div>
+        )}
       </div>
 
       <Canvas

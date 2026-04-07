@@ -4,79 +4,20 @@ import Hub3D from './components/Hub3D';
 import Store from './components/UI/Store';
 import Gallery from './components/UI/Gallery';
 
-// ─── Error Boundary ───────────────────────────────────────────────────────────
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, message: '' };
-  }
-
-  static getDerivedStateFromError(err) {
-    return { hasError: true, message: err?.message || 'Unknown error' };
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          background: '#0a0a0f', color: '#ff4444', fontFamily: "'Poppins', sans-serif",
-          gap: 16, padding: 24, textAlign: 'center',
-        }}>
-          <div style={{ fontSize: 13, color: '#ff6666', border: '1px solid #ff444433', padding: '12px 24px', borderRadius: 8, maxWidth: 360 }}>
-            Something went wrong — {this.state.message}
-          </div>
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              background: 'rgba(255,0,0,0.15)', border: '1px solid #ff4444',
-              color: '#ff4444', cursor: 'pointer', padding: '8px 24px',
-              borderRadius: 8, fontSize: 12, fontFamily: 'inherit', letterSpacing: 1,
-            }}
-          >
-            RELOAD
-          </button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-// ─── Token Helpers ────────────────────────────────────────────────────────────
-function isTokenExpired(token) {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.exp && Date.now() / 1000 > payload.exp;
-  } catch (_) {
-    return true;
-  }
-}
-
-function clearAuth() {
-  localStorage.removeItem('m3_token');
-  localStorage.removeItem('m3_user');
-}
-
-// ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [authUser, setAuthUser] = useState(null);
-  const [activeZone, setActiveZone] = useState(null);
+  const [activeZone, setActiveZone] = useState(null); // 'store' | 'gallery' | null
 
-  // Check for existing token on load — clear if expired
+  // Check for existing token on load
   useEffect(() => {
     const token = localStorage.getItem('m3_token');
     const userData = localStorage.getItem('m3_user');
     if (token && userData) {
-      if (isTokenExpired(token)) {
-        clearAuth();
-        return;
-      }
       try {
         setAuthUser(JSON.parse(userData));
       } catch (_) {
-        clearAuth();
+        localStorage.removeItem('m3_token');
+        localStorage.removeItem('m3_user');
       }
     }
   }, []);
@@ -88,7 +29,8 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    clearAuth();
+    localStorage.removeItem('m3_token');
+    localStorage.removeItem('m3_user');
     setAuthUser(null);
     setActiveZone(null);
   };
@@ -96,6 +38,7 @@ export default function App() {
   const handleZoneEnter = (zoneName) => {
     if (zoneName === 'store') setActiveZone('store');
     else if (zoneName === 'gallery') setActiveZone('gallery');
+    // portal zone stays in hub
   };
 
   const handleZoneClose = () => setActiveZone(null);
@@ -106,9 +49,10 @@ export default function App() {
 
       {authUser && (
         <>
-          <ErrorBoundary>
-            <Hub3D authUser={authUser} onZoneEnter={handleZoneEnter} />
-          </ErrorBoundary>
+          <Hub3D
+            authUser={authUser}
+            onZoneEnter={handleZoneEnter}
+          />
 
           {/* HUD */}
           <div style={{

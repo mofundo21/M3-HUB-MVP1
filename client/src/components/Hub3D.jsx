@@ -5,10 +5,7 @@ import * as THREE from 'three';
 import Avatar from './Avatar';
 import Zone from './Zone';
 
-const COLYSEUS_URL = import.meta.env.VITE_COLYSEUS_URL ||
-  (window.location.hostname === 'localhost'
-    ? 'ws://localhost:3001'
-    : 'wss://m3-hub-mvp1-production.up.railway.app');
+const COLYSEUS_URL = import.meta.env.VITE_COLYSEUS_URL || 'ws://localhost:3001';
 const MOVE_SPEED = 0.08;
 const UPDATE_RATE = 50; // ms between server position updates
 
@@ -85,8 +82,8 @@ function HubScene({ players, mySessionId, onMove, onZoneEnter }) {
       {/* Lighting */}
       <ambientLight intensity={0.3} color="#0a0a2e" />
       <pointLight position={[0, 8, 0]} intensity={1.5} color="#00ffff" distance={30} />
-      <pointLight position={[8, 6, 0]} intensity={1} color="#00ff00" distance={16} />
-      <pointLight position={[-8, 6, 0]} intensity={1} color="#ffff00" distance={16} />
+      <pointLight position={[15, 6, 0]} intensity={1} color="#00ff00" distance={20} />
+      <pointLight position={[-15, 6, 0]} intensity={1} color="#ffff00" distance={20} />
       <pointLight position={[0, 6, 0]} intensity={0.8} color="#ff00ff" distance={20} />
 
       {/* Ground plane */}
@@ -100,8 +97,8 @@ function HubScene({ players, mySessionId, onMove, onZoneEnter }) {
 
       {/* Zones */}
       <Zone name="portal" position={[0, 0, 0]} color="#ff00ff" label="PORTAL" onEnter={onZoneEnter} />
-      <Zone name="store" position={[8, 0, 0]} color="#00ff00" label="STORE" onEnter={onZoneEnter} />
-      <Zone name="gallery" position={[-8, 0, 0]} color="#ffff00" label="GALLERY" onEnter={onZoneEnter} />
+      <Zone name="store" position={[15, 0, 0]} color="#00ff00" label="STORE" onEnter={onZoneEnter} />
+      <Zone name="gallery" position={[-15, 0, 0]} color="#ffff00" label="GALLERY" onEnter={onZoneEnter} />
 
       {/* Player controller (local) */}
       <PlayerController sessionId={mySessionId} players={players} onMove={onMove} />
@@ -126,8 +123,6 @@ export default function Hub3D({ authUser, onZoneEnter }) {
   const [players, setPlayers] = useState(new Map());
   const [mySessionId, setMySessionId] = useState(null);
   const [connected, setConnected] = useState(false);
-  const [connError, setConnError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
   const roomRef = useRef(null);
 
   // Connect to Colyseus
@@ -137,17 +132,13 @@ export default function Hub3D({ authUser, onZoneEnter }) {
     const token = localStorage.getItem('m3_token');
     if (!token) return;
 
-    setConnError(null);
     const client = new Client(COLYSEUS_URL);
 
     client.joinOrCreate('hub', { token })
       .then((room) => {
         roomRef.current = room;
         setMySessionId(room.sessionId);
-        console.log('[Colyseus] joinOrCreate callback fired');
         setConnected(true);
-        console.log('[Colyseus] Connected:', true);
-        setConnError(null);
         console.log('[Colyseus] Joined hub, sessionId:', room.sessionId);
 
         const updatePlayers = () => {
@@ -175,28 +166,11 @@ export default function Hub3D({ authUser, onZoneEnter }) {
           updatePlayers();
         });
 
-        room.onLeave((code) => {
-          setConnected(false);
-          setConnError(`Disconnected (code ${code}). Server may be restarting.`);
-        });
-
-        room.onError((code, message) => {
-          setConnected(false);
-          setConnError(`Connection error: ${message || code}`);
-        });
-
         // Initial state
         updatePlayers();
       })
       .catch((err) => {
         console.error('[Colyseus] Failed to join:', err);
-        setConnected(false);
-        const msg = err?.message || String(err);
-        if (msg.includes('token') || msg.includes('auth') || msg.includes('jwt')) {
-          setConnError('Auth failed — try logging out and back in.');
-        } else {
-          setConnError('Could not reach server. Is it running?');
-        }
       });
 
     return () => {
@@ -205,7 +179,7 @@ export default function Hub3D({ authUser, onZoneEnter }) {
         roomRef.current = null;
       }
     };
-  }, [authUser, retryCount]);
+  }, [authUser]);
 
   const handleMove = useCallback((data) => {
     if (roomRef.current) {
@@ -225,41 +199,18 @@ export default function Hub3D({ authUser, onZoneEnter }) {
       {/* Connection status */}
       <div style={{
         position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+        background: connected ? 'rgba(0,255,0,0.15)' : 'rgba(255,0,0,0.15)',
+        border: `1px solid ${connected ? '#00ff00' : '#ff0000'}`,
+        color: connected ? '#00ff00' : '#ff4444',
+        padding: '4px 14px',
+        borderRadius: 20,
+        fontSize: 11,
+        userSelect: 'none',
         zIndex: 10,
       }}>
-        <div style={{
-          background: connected ? 'rgba(0,255,0,0.15)' : connError ? 'rgba(255,0,0,0.2)' : 'rgba(255,165,0,0.15)',
-          border: `1px solid ${connected ? '#00ff00' : connError ? '#ff4444' : '#ff9900'}`,
-          color: connected ? '#00ff00' : connError ? '#ff4444' : '#ff9900',
-          padding: '4px 14px',
-          borderRadius: 20,
-          fontSize: 11,
-          userSelect: 'none',
-          whiteSpace: 'nowrap',
-        }}>
-          {connected ? '● ONLINE' : connError ? '● DISCONNECTED' : '○ CONNECTING...'}
-        </div>
-        {connError && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            <div style={{ fontSize: 10, color: '#ff6666', background: 'rgba(0,0,0,0.7)', padding: '3px 10px', borderRadius: 4, maxWidth: 260, textAlign: 'center' }}>
-              {connError}
-            </div>
-            <button
-              onClick={() => setRetryCount(n => n + 1)}
-              style={{
-                background: 'rgba(255,0,0,0.15)', border: '1px solid #ff4444',
-                color: '#ff4444', cursor: 'pointer', padding: '4px 14px',
-                borderRadius: 12, fontSize: 10, fontFamily: 'inherit', letterSpacing: 1,
-              }}
-            >
-              ↺ RETRY
-            </button>
-          </div>
-        )}
+        {connected ? '● ONLINE' : '○ CONNECTING...'}
       </div>
 
-      {console.log('[Colyseus] Canvas should render now, connected:', connected)}
       <Canvas
         camera={{ position: [0, 10, 8], fov: 60 }}
         gl={{ antialias: true }}

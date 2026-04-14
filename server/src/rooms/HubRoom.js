@@ -1,7 +1,8 @@
 const { Room } = require('colyseus');
 const jwt = require('jsonwebtoken');
 const { HubRoomState, PlayerState } = require('./RoomState');
-const { JWT_SECRET } = require('../utils/config');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 class HubRoom extends Room {
   seatReservationTime = 15;

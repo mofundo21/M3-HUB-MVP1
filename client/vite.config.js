@@ -12,16 +12,4 @@ export default defineConfig({
       },
     },
   },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'three': ['three'],
-          'r3f': ['@react-three/fiber', '@react-three/drei'],
-          'colyseus': ['colyseus.js'],
-          'vendor': ['react', 'react-dom', 'axios'],
-        },
-      },
-    },
-  },
 });

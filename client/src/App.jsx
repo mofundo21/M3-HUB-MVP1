@@ -3,6 +3,9 @@ import LoginPopup from './components/UI/LoginPopup';
 import Hub3D from './components/Hub3D';
 import Store from './components/UI/Store';
 import Gallery from './components/UI/Gallery';
+import MobileControls from './components/MobileControls';
+
+const isTouchDevice = 'ontouchstart' in window;
 
 export default function App() {
   const [authUser, setAuthUser] = useState(null);
@@ -100,6 +103,9 @@ export default function App() {
           >
             Logout
           </button>
+
+          {/* Mobile touch controls */}
+          {isTouchDevice && <MobileControls />}
 
           {/* Zone panels */}
           {activeZone === 'store' && <Store onClose={handleZoneClose} />}

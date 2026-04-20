@@ -214,7 +214,7 @@ export default function Hub3D({ authUser, onZoneEnter }) {
       <Canvas
         camera={{ position: [0, 10, 8], fov: 60 }}
         gl={{ antialias: true }}
-        style={{ background: '#0a0a0f' }}
+        style={{ background: '#0a0a0f', touchAction: 'none' }}
       >
         <HubScene
           players={players}

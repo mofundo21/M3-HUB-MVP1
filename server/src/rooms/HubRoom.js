@@ -24,6 +24,39 @@ class HubRoom extends Room {
       if (!player) return;
       if (typeof data.zone === 'string') player.zone = data.zone;
     });
+
+    this.onMessage('chat', (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (!player) return;
+      const text = (typeof data.text === 'string' ? data.text : '').slice(0, 50);
+      if (text.length === 0) return;
+      this.broadcast('chatMessage', {
+        sessionId: client.sessionId,
+        username: player.username,
+        pkg: player.pkg,
+        text,
+        timestamp: Date.now(),
+      });
+    });
+
+    this.onMessage('typing', (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (!player) return;
+      player.isTyping = data.isTyping === true;
+      if (data.isTyping) {
+        player.lastTypingTime = Date.now();
+      }
+    });
+
+    // Clean up typing status after 3 seconds of inactivity
+    this.typingCleanupInterval = setInterval(() => {
+      const now = Date.now();
+      this.state.players.forEach((player) => {
+        if (player.isTyping && now - player.lastTypingTime > 3000) {
+          player.isTyping = false;
+        }
+      });
+    }, 1000);
   }
 
   onAuth(client, options) {
@@ -55,6 +88,9 @@ class HubRoom extends Room {
   }
 
   onDispose() {
+    if (this.typingCleanupInterval) {
+      clearInterval(this.typingCleanupInterval);
+    }
     console.log('[HubRoom] Disposed');
   }
 }

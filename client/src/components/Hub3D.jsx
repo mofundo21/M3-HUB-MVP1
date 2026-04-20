@@ -4,6 +4,8 @@ import { Client } from 'colyseus.js';
 import * as THREE from 'three';
 import Avatar from './Avatar';
 import Zone from './Zone';
+import SpeechBubble from './SpeechBubble';
+import Chatbox from './UI/Chatbox';
 
 const COLYSEUS_URL = import.meta.env.VITE_COLYSEUS_URL || 'ws://localhost:3001';
 const MOVE_SPEED = 0.08;
@@ -76,7 +78,7 @@ function PlayerController({ sessionId, players, onMove }) {
 }
 
 // ─── Scene ────────────────────────────────────────────────────────────────────
-function HubScene({ players, mySessionId, onMove, onZoneEnter }) {
+function HubScene({ players, mySessionId, onMove, onZoneEnter, speechBubbles }) {
   return (
     <>
       {/* Lighting */}
@@ -114,6 +116,18 @@ function HubScene({ players, mySessionId, onMove, onZoneEnter }) {
           isLocal={sessionId === mySessionId}
         />
       ))}
+
+      {/* Speech bubbles */}
+      {speechBubbles.map((bubble) => (
+        <SpeechBubble
+          key={bubble.id}
+          position={bubble.position}
+          text={bubble.text}
+          duration={4000}
+          fadeOutDuration={800}
+          onComplete={() => {}}
+        />
+      ))}
     </>
   );
 }
@@ -123,7 +137,10 @@ export default function Hub3D({ authUser, onZoneEnter }) {
   const [players, setPlayers] = useState(new Map());
   const [mySessionId, setMySessionId] = useState(null);
   const [connected, setConnected] = useState(false);
+  const [speechBubbles, setSpeechBubbles] = useState([]);
+  const [typingUsers, setTypingUsers] = useState(new Map());
   const roomRef = useRef(null);
+  const bubbleIdRef = useRef(0);
 
   // Connect to Colyseus
   useEffect(() => {
@@ -143,6 +160,7 @@ export default function Hub3D({ authUser, onZoneEnter }) {
 
         const updatePlayers = () => {
           const map = new Map();
+          const typing = new Map();
           room.state.players.forEach((player, sessionId) => {
             map.set(sessionId, {
               x: player.x,
@@ -152,18 +170,44 @@ export default function Hub3D({ authUser, onZoneEnter }) {
               username: player.username,
               pkg: player.pkg,
               zone: player.zone,
+              isTyping: player.isTyping,
             });
+            typing.set(sessionId, player.isTyping);
           });
           setPlayers(new Map(map));
+          setTypingUsers(new Map(typing));
         };
 
         room.state.players.onAdd((player, sessionId) => {
-          player.onChange(() => updatePlayers());
+          player.onChange(() => {
+            updatePlayers();
+            setTypingUsers((prev) => new Map(prev).set(sessionId, player.isTyping));
+          });
           updatePlayers();
         });
 
         room.state.players.onRemove((_player, sessionId) => {
           updatePlayers();
+        });
+
+        // Chat message listener
+        room.onMessage('chatMessage', (data) => {
+          const senderPlayer = room.state.players.get(data.sessionId);
+          if (senderPlayer) {
+            const bubbleId = bubbleIdRef.current++;
+            setSpeechBubbles((prev) => [
+              ...prev,
+              {
+                id: bubbleId,
+                text: data.text,
+                position: [senderPlayer.x, senderPlayer.y + 2.5, senderPlayer.z],
+              },
+            ]);
+            // Auto-remove bubble after animation
+            setTimeout(() => {
+              setSpeechBubbles((prev) => prev.filter((b) => b.id !== bubbleId));
+            }, 5100); // 300ms fade in + 4000ms hold + 800ms fade out
+          }
         });
 
         // Initial state
@@ -221,8 +265,12 @@ export default function Hub3D({ authUser, onZoneEnter }) {
           mySessionId={mySessionId}
           onMove={handleMove}
           onZoneEnter={handleZoneEnter}
+          speechBubbles={speechBubbles}
         />
       </Canvas>
+
+      {/* Chatbox */}
+      {connected && <Chatbox roomRef={roomRef} typingUsers={typingUsers} />}
     </div>
   );
 }

@@ -11,6 +11,8 @@ class PlayerState extends Schema {
     this.pkg = '';
     this.zone = 'hub';
     this.isGuest = false;
+    this.isTyping = false;
+    this.lastTypingTime = 0;
   }
 }
 
@@ -22,6 +24,8 @@ type('string')(PlayerState.prototype, 'username');
 type('string')(PlayerState.prototype, 'pkg');
 type('string')(PlayerState.prototype, 'zone');
 type('boolean')(PlayerState.prototype, 'isGuest');
+type('boolean')(PlayerState.prototype, 'isTyping');
+type('number')(PlayerState.prototype, 'lastTypingTime');
 
 class HubRoomState extends Schema {
   constructor() {

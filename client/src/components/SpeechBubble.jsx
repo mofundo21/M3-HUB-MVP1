@@ -74,21 +74,22 @@ export default function SpeechBubble({
         />
       </mesh>
 
-      {/* Text */}
-      <Text
-        position={[0, 0, 0]}
-        fontSize={0.2}
-        color="#00ffff"
-        anchorX="center"
-        anchorY="middle"
-        maxWidth={3}
-        textAlign="center"
-        fillOpacity={opacity}
-        renderOrder={1}
-        depthOffset={-1}
-      >
-        {text}
-      </Text>
+      {/* Text with opacity */}
+      <group opacity={opacity}>
+        <Text
+          position={[0, 0, 0]}
+          fontSize={0.2}
+          color="#00ffff"
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={3}
+          textAlign="center"
+          renderOrder={1}
+          depthOffset={-1}
+        >
+          {text}
+        </Text>
+      </group>
     </group>
   );
 }

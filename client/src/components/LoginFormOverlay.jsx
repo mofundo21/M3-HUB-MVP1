@@ -18,7 +18,7 @@ export default function LoginFormOverlay({ onAuth }) {
         ? { email: user, password: pass }
         : { email: user, username: user, password: pass };
       const res = await axios.post(`${API}/api/auth/${fn}`, payload);
-      onAuth(res.data.token, res.data.user);
+      onAuth(res.data.token, res.data.user, mode === 'register');
     } catch (e) {
       setErr(e.response?.data?.error || 'Failed');
     } finally {

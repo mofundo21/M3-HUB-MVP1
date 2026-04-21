@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Hub3D from './components/Hub3D';
 import LoginFormOverlay from './components/LoginFormOverlay';
+import AvatarCustomizer from './components/AvatarCustomizer';
 
 export default function App() {
   const [authUser, setAuthUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [needsCustomization, setNeedsCustomization] = useState(false);
 
   useEffect(() => {
     // Check for existing token on mount
@@ -23,10 +25,13 @@ export default function App() {
     setLoading(false);
   }, []);
 
-  const handleAuth = (token, user) => {
+  const handleAuth = (token, user, isNewUser = false) => {
     localStorage.setItem('m3_token', token);
     localStorage.setItem('m3_user', JSON.stringify(user));
     setAuthUser(user);
+    if (isNewUser) {
+      setNeedsCustomization(true);
+    }
   };
 
   const handleLogout = () => {
@@ -39,6 +44,10 @@ export default function App() {
 
   if (!authUser) {
     return <LoginFormOverlay onAuth={handleAuth} />;
+  }
+
+  if (needsCustomization) {
+    return <AvatarCustomizer user={authUser} onComplete={() => setNeedsCustomization(false)} />;
   }
 
   return <Hub3D authUser={authUser} onZoneEnter={() => {}} onLogout={handleLogout} />;

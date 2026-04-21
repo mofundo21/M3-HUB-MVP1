@@ -9,7 +9,6 @@ import SpeechBubble from './SpeechBubble';
 import GalleryRoom from './GalleryRoom';
 import Chatbox from './UI/Chatbox';
 import MobileControls from './MobileControls';
-import PointerHands from './PointerHands';
 
 const COLYSEUS_URL = import.meta.env.VITE_COLYSEUS_URL || 'wss://m3-hub-mvp1-production.up.railway.app';
 const MOVE_SPEED = 0.08;
@@ -264,6 +263,49 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
         {connected ? '● ONLINE' : '○ CONNECTING...'}
       </div>
 
+      {/* User info + logout */}
+      <div style={{
+        position: 'absolute', top: 12, right: 12,
+        background: 'rgba(0,0,0,0.6)',
+        border: '1px solid #00ffff',
+        color: '#00ffff',
+        padding: '8px 14px',
+        borderRadius: 8,
+        fontSize: 11,
+        userSelect: 'none',
+        zIndex: 10,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+      }}>
+        <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{authUser?.username || 'Unknown'}</span>
+        <button
+          onClick={onLogout}
+          style={{
+            background: 'rgba(255,0,0,0.2)',
+            border: '1px solid #ff4444',
+            color: '#ff4444',
+            padding: '4px 10px',
+            borderRadius: 4,
+            fontSize: 10,
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            fontFamily: 'monospace',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.background = 'rgba(255,0,0,0.4)';
+            e.target.style.boxShadow = '0 0 10px rgba(255,0,0,0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = 'rgba(255,0,0,0.2)';
+            e.target.style.boxShadow = 'none';
+          }}
+        >
+          LOGOUT
+        </button>
+      </div>
+
       <Canvas
         camera={{ position: [0, 10, 8], fov: 60 }}
         gl={{ antialias: true }}
@@ -277,9 +319,6 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
           speechBubbles={speechBubbles}
         />
       </Canvas>
-
-      {/* Pointer hands cursor UI */}
-      <PointerHands />
 
       {/* Mobile controls */}
       <MobileControls />

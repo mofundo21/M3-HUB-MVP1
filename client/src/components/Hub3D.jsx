@@ -8,6 +8,8 @@ import PortalGate from './PortalGate';
 import SpeechBubble from './SpeechBubble';
 import GalleryRoom from './GalleryRoom';
 import Chatbox from './UI/Chatbox';
+import MobileControls from './MobileControls';
+import PointerHands from './PointerHands';
 
 const COLYSEUS_URL = import.meta.env.VITE_COLYSEUS_URL || 'wss://m3-hub-mvp1-production.up.railway.app';
 const MOVE_SPEED = 0.08;
@@ -275,6 +277,12 @@ export default function Hub3D({ authUser, onZoneEnter }) {
           speechBubbles={speechBubbles}
         />
       </Canvas>
+
+      {/* Pointer hands cursor UI */}
+      <PointerHands />
+
+      {/* Mobile controls */}
+      <MobileControls />
 
       {/* Chatbox */}
       {connected && <Chatbox roomRef={roomRef} typingUsers={typingUsers} />}

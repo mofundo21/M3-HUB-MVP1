@@ -4,6 +4,7 @@ import { Client } from 'colyseus.js';
 import * as THREE from 'three';
 import Avatar from './Avatar';
 import Zone from './Zone';
+import PortalGate from './PortalGate';
 import SpeechBubble from './SpeechBubble';
 import GalleryRoom from './GalleryRoom';
 import Chatbox from './UI/Chatbox';
@@ -101,7 +102,9 @@ function HubScene({ players, mySessionId, onMove, onZoneEnter, speechBubbles }) 
       {/* Zones */}
       <Zone name="portal" position={[0, 0, 0]} color="#ff00ff" label="PORTAL" onEnter={onZoneEnter} />
       <Zone name="store" position={[15, 0, 0]} color="#00ff00" label="STORE" onEnter={onZoneEnter} />
-      <Zone name="gallery" position={[-15, 0, 0]} color="#ffff00" label="GALLERY" onEnter={onZoneEnter} />
+
+      {/* Gallery Portal Gate */}
+      <PortalGate position={[-15, 0, 0]} />
 
       {/* Gallery Room */}
       <GalleryRoom position={[-15, 0, 0]} />

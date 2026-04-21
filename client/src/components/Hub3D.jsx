@@ -9,6 +9,7 @@ import SpeechBubble from './SpeechBubble';
 import GalleryRoom from './GalleryRoom';
 import Chatbox from './UI/Chatbox';
 import MobileControls from './MobileControls';
+import ProfilePanel from './ProfilePanel';
 
 const COLYSEUS_URL = import.meta.env.VITE_COLYSEUS_URL || 'wss://m3-hub-mvp1-production.up.railway.app';
 const MOVE_SPEED = 0.08;
@@ -147,6 +148,7 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
   const [connected, setConnected] = useState(false);
   const [speechBubbles, setSpeechBubbles] = useState([]);
   const [typingUsers, setTypingUsers] = useState(new Map());
+  const [showProfile, setShowProfile] = useState(false);
   const roomRef = useRef(null);
   const bubbleIdRef = useRef(0);
 
@@ -263,7 +265,37 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
         {connected ? '● ONLINE' : '○ CONNECTING...'}
       </div>
 
-      {/* User info + logout */}
+      {/* Profile button (top-left) */}
+      <button
+        onClick={() => setShowProfile(true)}
+        style={{
+          position: 'absolute', top: 12, left: 12,
+          background: 'rgba(0,255,255,0.15)',
+          border: '1px solid #00ffff',
+          color: '#00ffff',
+          padding: '8px 14px',
+          borderRadius: 8,
+          fontSize: 11,
+          cursor: 'pointer',
+          fontFamily: 'monospace',
+          fontWeight: 'bold',
+          userSelect: 'none',
+          zIndex: 10,
+          transition: 'all 0.2s',
+        }}
+        onMouseEnter={(e) => {
+          e.target.style.background = 'rgba(0,255,255,0.3)';
+          e.target.style.boxShadow = '0 0 15px rgba(0,255,255,0.4)';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.background = 'rgba(0,255,255,0.15)';
+          e.target.style.boxShadow = 'none';
+        }}
+      >
+        👤 {authUser?.username}
+      </button>
+
+      {/* User info + logout (top-right) */}
       <div style={{
         position: 'absolute', top: 12, right: 12,
         background: 'rgba(0,0,0,0.6)',
@@ -278,7 +310,7 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
         alignItems: 'center',
         gap: '12px',
       }}>
-        <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{authUser?.username || 'Unknown'}</span>
+        <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>● ONLINE</span>
         <button
           onClick={onLogout}
           style={{
@@ -325,6 +357,9 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
 
       {/* Chatbox */}
       {connected && <Chatbox roomRef={roomRef} typingUsers={typingUsers} />}
+
+      {/* Profile Panel */}
+      {showProfile && <ProfilePanel user={authUser} onClose={() => setShowProfile(false)} />}
     </div>
   );
 }

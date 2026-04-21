@@ -23,16 +23,30 @@ export default function AvatarCustomizer({ user, onComplete }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const token = localStorage.getItem('m3_token');
-      await axios.post(`${API}/api/users/avatar`, {
+      // Save avatar choice to localStorage for now
+      const avatarData = {
         model: selected,
-        ...colors,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+        primaryColor: colors.primaryColor,
+        secondaryColor: colors.secondaryColor,
+        accentColor: colors.accentColor,
+      };
+      localStorage.setItem('m3_avatar', JSON.stringify(avatarData));
+
+      // Try to save to server (optional - doesn't block if fails)
+      try {
+        const token = localStorage.getItem('m3_token');
+        await axios.post(`${API}/api/users/avatar`, avatarData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (e) {
+        console.log('Server save skipped, using localStorage');
+      }
+
       onComplete();
     } catch (e) {
-      console.error('Failed to save avatar:', e);
+      console.error('Error:', e);
+      // Still complete even if error
+      onComplete();
     } finally {
       setSaving(false);
     }

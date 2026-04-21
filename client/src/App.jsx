@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import LoginPopup from './components/UI/LoginPopup';
+import ShipCrashLogin from './components/ShipCrashLogin';
 import Hub3D from './components/Hub3D';
 import Store from './components/UI/Store';
 import Gallery from './components/UI/Gallery';
@@ -48,7 +48,7 @@ export default function App() {
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative', background: '#0a0a0f' }}>
-      {!authUser && <LoginPopup onAuth={handleAuth} />}
+      {!authUser && <ShipCrashLogin onAuth={handleAuth} />}
 
       {authUser && (
         <>

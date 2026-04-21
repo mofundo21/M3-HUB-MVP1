@@ -62,6 +62,12 @@ class HubRoom extends Room {
   onAuth(client, options) {
     const token = options.token;
     if (!token) throw new Error('No token provided');
+
+    // Allow guest token for demo
+    if (token === 'guest-token') {
+      return { username: 'Guest', isGuest: true };
+    }
+
     try {
       return jwt.verify(token, JWT_SECRET);
     } catch (e) {

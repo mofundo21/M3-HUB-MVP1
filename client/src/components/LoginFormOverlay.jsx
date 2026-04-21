@@ -14,7 +14,10 @@ export default function LoginFormOverlay({ onAuth }) {
     setErr('');
     setLoad(true);
     try {
-      const res = await axios.post(`${API}/api/auth/${fn}`, { username: user, password: pass });
+      const payload = mode === 'login'
+        ? { email: user, password: pass }
+        : { email: user, username: user, password: pass };
+      const res = await axios.post(`${API}/api/auth/${fn}`, payload);
       onAuth(res.data.token, res.data.user);
     } catch (e) {
       setErr(e.response?.data?.error || 'Failed');
@@ -55,7 +58,7 @@ export default function LoginFormOverlay({ onAuth }) {
 
         <input
           type="text"
-          placeholder="username"
+          placeholder={mode === 'login' ? 'email' : 'username / email'}
           value={user}
           onChange={(e) => setUser(e.target.value)}
           disabled={load}

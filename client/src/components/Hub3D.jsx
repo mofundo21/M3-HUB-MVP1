@@ -142,7 +142,7 @@ function HubScene({ players, mySessionId, onMove, onZoneEnter, speechBubbles }) 
 }
 
 // ─── Hub3D ────────────────────────────────────────────────────────────────────
-export default function Hub3D({ authUser, onZoneEnter }) {
+export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
   const [players, setPlayers] = useState(new Map());
   const [mySessionId, setMySessionId] = useState(null);
   const [connected, setConnected] = useState(false);

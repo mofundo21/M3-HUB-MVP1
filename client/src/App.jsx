@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Hub3D from './components/Hub3D';
 import CinematicLoginScene from './components/CinematicLoginScene';
 import AvatarCustomizer from './components/AvatarCustomizer';
+import { DeviceProvider } from './context/DeviceContext';
 
 export default function App() {
   const [authUser, setAuthUser] = useState(null);
@@ -42,13 +43,14 @@ export default function App() {
 
   if (loading) return null;
 
+  let inner;
   if (!authUser) {
-    return <CinematicLoginScene onAuth={handleAuth} />;
+    inner = <CinematicLoginScene onAuth={handleAuth} />;
+  } else if (needsCustomization) {
+    inner = <AvatarCustomizer user={authUser} onComplete={() => setNeedsCustomization(false)} />;
+  } else {
+    inner = <Hub3D authUser={authUser} onZoneEnter={() => {}} onLogout={handleLogout} />;
   }
 
-  if (needsCustomization) {
-    return <AvatarCustomizer user={authUser} onComplete={() => setNeedsCustomization(false)} />;
-  }
-
-  return <Hub3D authUser={authUser} onZoneEnter={() => {}} onLogout={handleLogout} />;
+  return <DeviceProvider>{inner}</DeviceProvider>;
 }

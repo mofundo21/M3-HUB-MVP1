@@ -10,6 +10,7 @@ import GalleryRoom from './GalleryRoom';
 import Chatbox from './UI/Chatbox';
 import MobileControls from './MobileControls';
 import ProfilePanel from './ProfilePanel';
+import { useDevice } from '../context/DeviceContext';
 
 const COLYSEUS_URL = import.meta.env.VITE_COLYSEUS_URL || 'wss://m3-hub-mvp1-production.up.railway.app';
 const MOVE_SPEED = 0.08;
@@ -151,6 +152,7 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
   const [showProfile, setShowProfile] = useState(false);
   const roomRef = useRef(null);
   const bubbleIdRef = useRef(0);
+  const { isMobile } = useDevice();
 
   // Connect to Colyseus
   useEffect(() => {
@@ -353,7 +355,7 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
       </Canvas>
 
       {/* Mobile controls */}
-      <MobileControls />
+      {isMobile && <MobileControls />}
 
       {/* Chatbox */}
       {connected && <Chatbox roomRef={roomRef} typingUsers={typingUsers} />}

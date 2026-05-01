@@ -87,10 +87,12 @@ export default function ShipModel({ scrollProgress }) {
         positions[idx + 2] = p.pos.z;
 
         const alpha = (p.life / p.maxLife) * 0.8;
+        // Re-entry heat: cyan → orange → white as descent progresses
+        const heat = Math.min(Math.max((scrollProgress - 55) / 35, 0), 1);
         const colorIdx = i * 3;
-        colors[colorIdx] = 0;
-        colors[colorIdx + 1] = 1;
-        colors[colorIdx + 2] = 1;
+        colors[colorIdx]     = heat * 1.0;               // R: 0→1
+        colors[colorIdx + 1] = heat < 0.5 ? 1 - heat : (1 - heat) * 0.4; // G: fade
+        colors[colorIdx + 2] = 1 - heat;                 // B: 1→0
       });
 
       smokeRef.current.geometry.attributes.position.needsUpdate = true;

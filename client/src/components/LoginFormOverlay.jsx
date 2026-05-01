@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const API = 'https://m3-hub-mvp1-production.up.railway.app';
 
-export default function LoginFormOverlay({ onAuth }) {
+export default function LoginFormOverlay({ onAuth, compact = false }) {
   const [user, setUser] = useState('');
   const [pass, setPass] = useState('');
   const [mode, setMode] = useState('login');
@@ -39,14 +39,15 @@ export default function LoginFormOverlay({ onAuth }) {
     }
   };
 
-  return (
-    <div style={styles.container}>
-      {/* Animated background grid */}
-      <div style={styles.gridBg} />
+  const containerStyle = compact
+    ? { position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }
+    : styles.container;
 
-      {/* Glow orbs */}
-      <div style={styles.glowOrb1} />
-      <div style={styles.glowOrb2} />
+  return (
+    <div style={containerStyle}>
+      {!compact && <div style={styles.gridBg} />}
+      {!compact && <div style={styles.glowOrb1} />}
+      {!compact && <div style={styles.glowOrb2} />}
 
       {/* Main form */}
       <div style={styles.formBox}>

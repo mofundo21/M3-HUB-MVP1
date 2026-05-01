@@ -76,8 +76,14 @@ export default function JourneyScene({ scrollProgress }) {
       {/* Atmosphere haze (Scene 3-5) */}
       <AtmosphereHaze scrollProgress={scrollProgress} />
 
+      {/* Earth-like destination planet (Scene 3→5) */}
+      <EarthPlanet scrollProgress={scrollProgress} />
+
       {/* Ship with smoke trail */}
       <ShipModel scrollProgress={scrollProgress} />
+
+      {/* Crash shockwave (Scene 5) */}
+      <CrashShockwave scrollProgress={scrollProgress} />
 
       {/* Landing particles (Scene 5) */}
       <LandingParticles scrollProgress={scrollProgress} />
@@ -228,6 +234,101 @@ function AtmosphereHaze({ scrollProgress }) {
         side={THREE.BackSide}
       />
     </mesh>
+  );
+}
+
+function EarthPlanet({ scrollProgress }) {
+  const mesh = useRef();
+  const atmRef = useRef();
+
+  // Starts far away, grows as ship descends
+  const t = Math.max(0, (scrollProgress - 40) / 60); // 0 at scene2, 1 at scene5
+  const scale = 1 + t * 12;
+  const emissiveIntensity = 0.15 + t * 0.35;
+
+  useFrame(() => {
+    if (mesh.current) mesh.current.rotation.y += 0.0003;
+    if (atmRef.current) {
+      atmRef.current.material.opacity = Math.min(t * 0.5, 0.4);
+    }
+  });
+
+  return (
+    <group position={[0, -8, -30]}>
+      {/* Core planet */}
+      <mesh ref={mesh} scale={scale}>
+        <sphereGeometry args={[3, 64, 64]} />
+        <meshStandardMaterial
+          color="#0a1a3a"
+          emissive="#1a3a6a"
+          emissiveIntensity={emissiveIntensity}
+        />
+      </mesh>
+      {/* Cyan continent glow patches */}
+      <mesh scale={scale * 1.01}>
+        <sphereGeometry args={[3, 32, 32]} />
+        <meshStandardMaterial
+          color="#003366"
+          emissive="#00ffff"
+          emissiveIntensity={emissiveIntensity * 0.3}
+          transparent
+          opacity={0.4}
+          wireframe
+        />
+      </mesh>
+      {/* Atmosphere glow */}
+      <mesh ref={atmRef} scale={scale * 1.06}>
+        <sphereGeometry args={[3, 32, 32]} />
+        <meshStandardMaterial
+          emissive="#00aaff"
+          emissiveIntensity={0.8}
+          transparent
+          opacity={0}
+          side={THREE.BackSide}
+          depthWrite={false}
+        />
+      </mesh>
+      <pointLight position={[0, 0, 0]} intensity={t * 2} color="#00ccff" distance={scale * 15} />
+    </group>
+  );
+}
+
+function CrashShockwave({ scrollProgress }) {
+  const ringRef = useRef();
+  const ring2Ref = useRef();
+
+  const crashT = Math.max(0, (scrollProgress - 88) / 12); // fires in final 12%
+  const scale = crashT * 8;
+  const opacity = Math.max(0, (1 - crashT) * 0.9);
+
+  useFrame(() => {
+    if (ringRef.current) {
+      ringRef.current.scale.set(scale, scale, scale);
+      ringRef.current.material.opacity = opacity;
+    }
+    if (ring2Ref.current) {
+      const s2 = Math.max(0, crashT - 0.15) * 6;
+      ring2Ref.current.scale.set(s2, s2, s2);
+      ring2Ref.current.material.opacity = Math.max(0, (1 - (crashT - 0.15)) * 0.7);
+    }
+  });
+
+  if (crashT <= 0) return null;
+
+  return (
+    <group position={[0, 0, 0]}>
+      <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[1, 0.08, 8, 64]} />
+        <meshStandardMaterial emissive="#ff6600" emissiveIntensity={2} transparent opacity={opacity} depthWrite={false} />
+      </mesh>
+      <mesh ref={ring2Ref} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[1, 0.05, 8, 64]} />
+        <meshStandardMaterial emissive="#ffff00" emissiveIntensity={2} transparent opacity={0} depthWrite={false} />
+      </mesh>
+      {crashT > 0 && crashT < 0.3 && (
+        <pointLight position={[0, 0, 0]} intensity={5 * (1 - crashT / 0.3)} color="#ff4400" distance={20} />
+      )}
+    </group>
   );
 }
 

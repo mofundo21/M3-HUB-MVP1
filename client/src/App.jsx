@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Hub3D from './components/Hub3D';
-import LoginFormOverlay from './components/LoginFormOverlay';
+import ScrollJourneyLogin from './components/ScrollJourneyLogin';
 import AvatarCustomizer from './components/AvatarCustomizer';
 
 export default function App() {
@@ -43,7 +43,7 @@ export default function App() {
   if (loading) return null;
 
   if (!authUser) {
-    return <LoginFormOverlay onAuth={handleAuth} />;
+    return <ScrollJourneyLogin onAuth={handleAuth} />;
   }
 
   if (needsCustomization) {

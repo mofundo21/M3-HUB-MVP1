@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Hub3D from './components/Hub3D';
-import ScrollJourneyLogin from './components/ScrollJourneyLogin';
+import CinematicLoginScene from './components/CinematicLoginScene';
 import AvatarCustomizer from './components/AvatarCustomizer';
 
 export default function App() {
@@ -43,7 +43,7 @@ export default function App() {
   if (loading) return null;
 
   if (!authUser) {
-    return <ScrollJourneyLogin onAuth={handleAuth} />;
+    return <CinematicLoginScene onAuth={handleAuth} />;
   }
 
   if (needsCustomization) {

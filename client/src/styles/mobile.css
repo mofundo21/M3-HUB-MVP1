@@ -1,0 +1,70 @@
+/* Mobile-specific overrides — loaded globally, scoped via media queries */
+
+@media (max-width: 768px) {
+
+  /* ── Joystick ────────────────────────────────────────── */
+  #m3-joystick-ring {
+    bottom: 90px !important;
+    left: 24px !important;
+    width: 110px !important;
+    height: 110px !important;
+  }
+
+  /* ── Action buttons (INTERACT / ZONE) ────────────────── */
+  .m3-action-btn {
+    min-width: 72px !important;
+    min-height: 52px !important;
+    font-size: 13px !important;
+    padding: 12px 18px !important;
+  }
+
+  /* ── Chat input ──────────────────────────────────────── */
+  .m3-chat-input {
+    font-size: 16px !important; /* prevent iOS auto-zoom */
+  }
+
+  /* ── Profile panel full-screen on mobile ─────────────── */
+  .m3-profile-panel {
+    inset: 0 !important;
+    border-radius: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* ── Connection badge — move below top HUD row ───────── */
+  .m3-connection-badge {
+    top: 60px !important;
+    font-size: 10px !important;
+  }
+
+  /* ── Login journey scroll ─────────────────────────────── */
+  .cinematic-login-root {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* ── AvatarCustomizer — stack columns ────────────────── */
+  .avatar-customizer-grid {
+    flex-direction: column !important;
+  }
+}
+
+/* ── Landscape phone: shrink joystick to not block scene ── */
+@media (max-width: 768px) and (orientation: landscape) {
+  #m3-joystick-ring {
+    bottom: 16px !important;
+    width: 90px !important;
+    height: 90px !important;
+  }
+
+  .m3-action-btn {
+    bottom: 16px !important;
+  }
+}
+
+/* ── Retina / high-DPI: sharper thin borders ──────────── */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  #m3-joystick-ring {
+    border-width: 1px !important;
+  }
+}

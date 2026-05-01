@@ -3,6 +3,9 @@ import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
 
+const isMobileDevice = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;
+const SEG = isMobileDevice ? 8 : 16;
+
 export default function Avatar({ position, rotY = 0, username, pkg, isLocal }) {
   const groupRef = useRef();
   const targetPos = useRef(new THREE.Vector3(...position));
@@ -63,11 +66,11 @@ export default function Avatar({ position, rotY = 0, username, pkg, isLocal }) {
         return (
           <>
             <mesh position={[0, 0.75, 0]} castShadow>
-              <sphereGeometry args={[0.4, 16, 16]} />
+              <sphereGeometry args={[0.4, SEG, SEG]} />
               <meshStandardMaterial color={primaryColor} emissive={primaryColor} emissiveIntensity={0.3} />
             </mesh>
             <mesh position={[0, 1.7, 0]} castShadow>
-              <sphereGeometry args={[0.3, 16, 16]} />
+              <sphereGeometry args={[0.3, SEG, SEG]} />
               <meshStandardMaterial color={secondaryColor} emissive={secondaryColor} emissiveIntensity={0.5} />
             </mesh>
           </>
@@ -102,15 +105,15 @@ export default function Avatar({ position, rotY = 0, username, pkg, isLocal }) {
         return (
           <>
             <mesh position={[0, 0.9, 0]} castShadow>
-              <torusGeometry args={[0.4, 0.15, 8, 16]} />
+              <torusGeometry args={[0.4, 0.15, 8, SEG]} />
               <meshStandardMaterial color={primaryColor} emissive={primaryColor} emissiveIntensity={0.3} />
             </mesh>
             <mesh position={[0, 0.9, 0]} rotation={[Math.PI / 3, 0, 0]} castShadow>
-              <torusGeometry args={[0.3, 0.1, 8, 16]} />
+              <torusGeometry args={[0.3, 0.1, 8, SEG]} />
               <meshStandardMaterial color={secondaryColor} emissive={secondaryColor} emissiveIntensity={0.4} />
             </mesh>
             <mesh position={[0, 1.7, 0]} castShadow>
-              <sphereGeometry args={[0.25, 16, 16]} />
+              <sphereGeometry args={[0.25, SEG, SEG]} />
               <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.5} />
             </mesh>
           </>
@@ -127,7 +130,7 @@ export default function Avatar({ position, rotY = 0, username, pkg, isLocal }) {
       {/* Glow ring for local player */}
       {isLocal && (
         <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.5, 0.65, 16]} />
+          <ringGeometry args={[0.5, 0.65, SEG]} />
           <meshBasicMaterial color={avatar.primaryColor} transparent opacity={0.3} side={2} />
         </mesh>
       )}

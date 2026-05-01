@@ -1,0 +1,138 @@
+/* Base reset & responsive foundation */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0a0f;
+  font-family: 'Courier New', monospace;
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  width: 100dvw;
+  height: 100dvh;
+}
+
+/* Touch target minimum */
+button, [role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+  cursor: pointer;
+}
+
+/* ── Breakpoints ────────────────────────────────────────── */
+/* xs: ≤375px  — small phones (iPhone SE)                  */
+/* sm: ≤414px  — standard phones (iPhone 14)               */
+/* md: ≤768px  — large phones / small tablets              */
+/* lg: ≤1024px — tablets / small laptops                   */
+
+/* ── Scrollbar hide (mobile-style) ─────────────────────── */
+::-webkit-scrollbar { width: 0; background: transparent; }
+
+/* ── Selection ──────────────────────────────────────────── */
+::selection { background: rgba(0, 255, 255, 0.2); }
+
+/* ── Canvas full-bleed ──────────────────────────────────── */
+canvas {
+  display: block;
+  outline: none;
+  touch-action: none;
+}
+
+/* ── HUD overlay layer ──────────────────────────────────── */
+.hud-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.hud-overlay > * {
+  pointer-events: auto;
+}
+
+/* ── Status badge ───────────────────────────────────────── */
+.status-badge {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* ── Top-left / top-right HUD buttons ──────────────────── */
+.hud-btn {
+  position: absolute;
+  top: 12px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  user-select: none;
+  transition: all 0.2s;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── xs: ≤375px ─────────────────────────────────────────── */
+@media (max-width: 375px) {
+  .hud-btn {
+    font-size: 10px;
+    padding: 6px 10px;
+  }
+
+  .status-badge {
+    font-size: 10px;
+    padding: 3px 10px;
+    top: 8px;
+  }
+}
+
+/* ── sm: ≤414px ─────────────────────────────────────────── */
+@media (max-width: 414px) {
+  .hud-btn {
+    top: 8px;
+  }
+}
+
+/* ── md: ≤768px ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Prevent double-tap zoom on interactive elements */
+  button, input, textarea {
+    touch-action: manipulation;
+  }
+}
+
+/* ── lg: ≤1024px ────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+/* ── Show/hide helpers ──────────────────────────────────── */
+@media (min-width: 769px) {
+  .mobile-only { display: none !important; }
+}
+
+@media (max-width: 768px) {
+  .desktop-only { display: none !important; }
+}

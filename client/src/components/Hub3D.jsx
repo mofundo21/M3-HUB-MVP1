@@ -83,14 +83,15 @@ function PlayerController({ sessionId, players, onMove }) {
 }
 
 // ─── Scene ────────────────────────────────────────────────────────────────────
-function HubScene({ players, mySessionId, onMove, onZoneEnter, speechBubbles }) {
+function HubScene({ players, mySessionId, onMove, onZoneEnter, speechBubbles, isMobile }) {
+  const gridDivisions = isMobile ? 25 : 50;
   return (
     <>
-      {/* Lighting */}
-      <ambientLight intensity={0.3} color="#0a0a2e" />
+      {/* Lighting — fewer lights on mobile */}
+      <ambientLight intensity={isMobile ? 0.5 : 0.3} color="#0a0a2e" />
       <pointLight position={[0, 8, 0]} intensity={1.5} color="#00ffff" distance={30} />
-      <pointLight position={[15, 6, 0]} intensity={1} color="#00ff00" distance={20} />
-      <pointLight position={[-15, 6, 0]} intensity={1} color="#ffff00" distance={20} />
+      {!isMobile && <pointLight position={[15, 6, 0]} intensity={1} color="#00ff00" distance={20} />}
+      {!isMobile && <pointLight position={[-15, 6, 0]} intensity={1} color="#ffff00" distance={20} />}
       <pointLight position={[0, 6, 0]} intensity={0.8} color="#ff00ff" distance={20} />
 
       {/* Ground plane */}
@@ -99,8 +100,8 @@ function HubScene({ players, mySessionId, onMove, onZoneEnter, speechBubbles }) 
         <meshStandardMaterial color="#0a0a0f" metalness={0.4} roughness={0.8} />
       </mesh>
 
-      {/* Grid overlay */}
-      <gridHelper args={[100, 50, '#111133', '#0d0d2e']} position={[0, 0, 0]} />
+      {/* Grid overlay — half density on mobile */}
+      <gridHelper args={[100, gridDivisions, '#111133', '#0d0d2e']} position={[0, 0, 0]} />
 
       {/* Zones */}
       <Zone name="portal" position={[0, 0, 0]} color="#ff00ff" label="PORTAL" onEnter={onZoneEnter} />
@@ -253,17 +254,19 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
   return (
     <div style={{ width: '100%', height: '100%' }}>
       {/* Connection status */}
-      <div style={{
-        position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
-        background: connected ? 'rgba(0,255,0,0.15)' : 'rgba(255,0,0,0.15)',
-        border: `1px solid ${connected ? '#00ff00' : '#ff0000'}`,
-        color: connected ? '#00ff00' : '#ff4444',
-        padding: '4px 14px',
-        borderRadius: 20,
-        fontSize: 11,
-        userSelect: 'none',
-        zIndex: 10,
-      }}>
+      <div
+        className="m3-connection-badge"
+        style={{
+          position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+          background: connected ? 'rgba(0,255,0,0.15)' : 'rgba(255,0,0,0.15)',
+          border: `1px solid ${connected ? '#00ff00' : '#ff0000'}`,
+          color: connected ? '#00ff00' : '#ff4444',
+          padding: '4px 14px',
+          borderRadius: 20,
+          fontSize: 11,
+          userSelect: 'none',
+          zIndex: 10,
+        }}>
         {connected ? '● ONLINE' : '○ CONNECTING...'}
       </div>
 
@@ -342,8 +345,9 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
 
       <Canvas
         camera={{ position: [0, 10, 8], fov: 60 }}
-        gl={{ antialias: true }}
+        gl={{ antialias: !isMobile, powerPreference: isMobile ? 'low-power' : 'high-performance' }}
         style={{ background: '#0a0a0f', touchAction: 'none' }}
+        dpr={isMobile ? [1, 1.5] : [1, 2]}
       >
         <HubScene
           players={players}
@@ -351,6 +355,7 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
           onMove={handleMove}
           onZoneEnter={handleZoneEnter}
           speechBubbles={speechBubbles}
+          isMobile={isMobile}
         />
       </Canvas>
 

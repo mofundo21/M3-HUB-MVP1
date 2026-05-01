@@ -160,6 +160,7 @@ export default function MobileControls() {
 
       {/* INTERACT button → E */}
       <div
+        className="m3-action-btn"
         style={{ ...BUTTON_STYLE, bottom: 120, right: 30 }}
         {...makeActionHandler('KeyE', 'e')}
       >
@@ -168,6 +169,7 @@ export default function MobileControls() {
 
       {/* ZONE button → F */}
       <div
+        className="m3-action-btn"
         style={{ ...BUTTON_STYLE, bottom: 60, right: 30 }}
         {...makeActionHandler('KeyF', 'f')}
       >

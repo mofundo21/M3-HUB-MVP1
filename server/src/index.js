@@ -6,6 +6,8 @@ const { WebSocketTransport } = require('@colyseus/ws-transport');
 const { monitor } = require('@colyseus/monitor');
 
 const authRoutes = require('./routes/auth');
+const mcpRoutes = require('./routes/mcp');
+const MCPService = require('./services/MCPService');
 const { HubRoom } = require('./rooms/HubRoom');
 const { getDb } = require('./utils/db');
 
@@ -21,9 +23,11 @@ app.use(cors({
 app.use(express.json());
 
 getDb();
+MCPService.initialize().catch(console.error);
 
 // ─── REST API Routes ───────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
+app.use('/api/mcp', mcpRoutes);
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 

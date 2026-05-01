@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import Hub3D from './components/Hub3D';
 import CinematicLoginScene from './components/CinematicLoginScene';
+import MobileAuthModal from './components/MobileAuthModal';
 import AvatarCustomizer from './components/AvatarCustomizer';
-import { DeviceProvider } from './context/DeviceContext';
+import { DeviceProvider, useDevice } from './context/DeviceContext';
 
-export default function App() {
+function AppInner() {
   const [authUser, setAuthUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [needsCustomization, setNeedsCustomization] = useState(false);
+  const { isMobile } = useDevice();
 
   useEffect(() => {
-    // Check for existing token on mount
     const token = localStorage.getItem('m3_token');
     if (token) {
       const user = localStorage.getItem('m3_user');
@@ -43,14 +44,19 @@ export default function App() {
 
   if (loading) return null;
 
-  let inner;
   if (!authUser) {
-    inner = <CinematicLoginScene onAuth={handleAuth} />;
-  } else if (needsCustomization) {
-    inner = <AvatarCustomizer user={authUser} onComplete={() => setNeedsCustomization(false)} />;
-  } else {
-    inner = <Hub3D authUser={authUser} onZoneEnter={() => {}} onLogout={handleLogout} />;
+    return isMobile
+      ? <MobileAuthModal onAuth={handleAuth} />
+      : <CinematicLoginScene onAuth={handleAuth} />;
   }
 
-  return <DeviceProvider>{inner}</DeviceProvider>;
+  if (needsCustomization) {
+    return <AvatarCustomizer user={authUser} onComplete={() => setNeedsCustomization(false)} />;
+  }
+
+  return <Hub3D authUser={authUser} onZoneEnter={() => {}} onLogout={handleLogout} />;
+}
+
+export default function App() {
+  return <DeviceProvider><AppInner /></DeviceProvider>;
 }

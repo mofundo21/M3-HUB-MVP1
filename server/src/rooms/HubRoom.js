@@ -39,6 +39,14 @@ class HubRoom extends Room {
       });
     });
 
+    this.onMessage('updateAvatar', (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (!player) return;
+      if (typeof data.avatar === 'string') {
+        player.avatar = data.avatar.slice(0, 300);
+      }
+    });
+
     this.onMessage('typing', (client, data) => {
       const player = this.state.players.get(client.sessionId);
       if (!player) return;
@@ -80,6 +88,7 @@ class HubRoom extends Room {
     player.username = auth.username || 'Unknown';
     player.pkg = auth.pkg || '';
     player.isGuest = auth.isGuest || false;
+    player.avatar = typeof options.avatar === 'string' ? options.avatar.slice(0, 300) : '';
     player.x = (Math.random() - 0.5) * 4;
     player.y = 0;
     player.z = (Math.random() - 0.5) * 4;

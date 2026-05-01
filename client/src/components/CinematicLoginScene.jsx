@@ -423,11 +423,6 @@ function SceneHUD({ progress, currentScene, showForm }) {
 
   return (
     <div className="cl-hud">
-      {/* Scene counter */}
-      {progress > 1 && !showForm && (
-        <div className="cl-scene-counter">SCENE {currentScene + 1} · 5</div>
-      )}
-
       {/* Lore text */}
       <div className="cl-lore" style={{ opacity: textOp }}>
         <div className="cl-lore-title">{scene?.title}</div>

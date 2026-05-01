@@ -10,6 +10,7 @@ import GalleryRoom from './GalleryRoom';
 import Chatbox from './UI/Chatbox';
 import MobileControls from './MobileControls';
 import ProfilePanel from './ProfilePanel';
+import PlayerCard from './PlayerCard';
 import { useDevice } from '../context/DeviceContext';
 
 const COLYSEUS_URL = import.meta.env.VITE_COLYSEUS_URL || 'wss://m3-hub-mvp1-production.up.railway.app';
@@ -83,7 +84,7 @@ function PlayerController({ sessionId, players, onMove }) {
 }
 
 // ─── Scene ────────────────────────────────────────────────────────────────────
-function HubScene({ players, mySessionId, onMove, onZoneEnter, speechBubbles, isMobile }) {
+function HubScene({ players, mySessionId, onMove, onZoneEnter, speechBubbles, isMobile, onPlayerClick }) {
   const gridDivisions = isMobile ? 25 : 50;
   return (
     <>
@@ -125,6 +126,8 @@ function HubScene({ players, mySessionId, onMove, onZoneEnter, speechBubbles, is
           username={player.username}
           pkg={player.pkg}
           isLocal={sessionId === mySessionId}
+          avatarJson={player.avatar}
+          onClick={sessionId !== mySessionId ? () => onPlayerClick(player) : undefined}
         />
       ))}
 
@@ -151,6 +154,8 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
   const [speechBubbles, setSpeechBubbles] = useState([]);
   const [typingUsers, setTypingUsers] = useState(new Map());
   const [showProfile, setShowProfile] = useState(false);
+  const [showChat, setShowChat] = useState(true);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
   const roomRef = useRef(null);
   const bubbleIdRef = useRef(0);
   const { isMobile } = useDevice();
@@ -163,8 +168,9 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
     if (!token) return;
 
     const client = new Client(COLYSEUS_URL);
+    const avatarJson = localStorage.getItem('m3_avatar') || '';
 
-    client.joinOrCreate('hub', { token })
+    client.joinOrCreate('hub', { token, avatar: avatarJson })
       .then((room) => {
         roomRef.current = room;
         setMySessionId(room.sessionId);
@@ -184,6 +190,7 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
               pkg: player.pkg,
               zone: player.zone,
               isTyping: player.isTyping,
+              avatar: player.avatar,
             });
             typing.set(sessionId, player.isTyping);
           });
@@ -242,6 +249,10 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
     if (roomRef.current) {
       roomRef.current.send('move', data);
     }
+  }, []);
+
+  const handlePlayerClick = useCallback((player) => {
+    setSelectedPlayer(player);
   }, []);
 
   const handleZoneEnter = useCallback((zoneName) => {
@@ -356,17 +367,50 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
           onZoneEnter={handleZoneEnter}
           speechBubbles={speechBubbles}
           isMobile={isMobile}
+          onPlayerClick={handlePlayerClick}
         />
       </Canvas>
 
       {/* Mobile controls */}
       {isMobile && <MobileControls />}
 
+      {/* Chat toggle button */}
+      {connected && (
+        <button
+          onClick={() => setShowChat(v => !v)}
+          style={{
+            position: 'absolute', bottom: 12, right: 12,
+            background: showChat ? 'rgba(0,255,255,0.2)' : 'rgba(0,0,0,0.6)',
+            border: `1px solid ${showChat ? '#00ffff' : 'rgba(0,255,255,0.4)'}`,
+            color: '#00ffff',
+            padding: '8px 14px',
+            borderRadius: 8,
+            fontSize: 11,
+            fontFamily: 'monospace',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            zIndex: showChat ? 99 : 10,
+            userSelect: 'none',
+            minHeight: 44,
+            transition: 'all 0.2s',
+          }}
+        >
+          {showChat ? '✕ CHAT' : '💬 CHAT'}
+        </button>
+      )}
+
       {/* Chatbox */}
-      {connected && <Chatbox roomRef={roomRef} typingUsers={typingUsers} />}
+      {connected && showChat && (
+        <Chatbox roomRef={roomRef} typingUsers={typingUsers} />
+      )}
 
       {/* Profile Panel */}
       {showProfile && <ProfilePanel user={authUser} onClose={() => setShowProfile(false)} />}
+
+      {/* Player Card */}
+      {selectedPlayer && (
+        <PlayerCard player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
+      )}
     </div>
   );
 }

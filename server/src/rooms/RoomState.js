@@ -13,6 +13,7 @@ class PlayerState extends Schema {
     this.isGuest = false;
     this.isTyping = false;
     this.lastTypingTime = 0;
+    this.avatar = '';
   }
 }
 
@@ -26,6 +27,7 @@ type('string')(PlayerState.prototype, 'zone');
 type('boolean')(PlayerState.prototype, 'isGuest');
 type('boolean')(PlayerState.prototype, 'isTyping');
 type('number')(PlayerState.prototype, 'lastTypingTime');
+type('string')(PlayerState.prototype, 'avatar');
 
 class HubRoomState extends Schema {
   constructor() {

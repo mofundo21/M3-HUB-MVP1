@@ -335,3 +335,21 @@
   .cl-lore-title { font-size: 1.5rem; letter-spacing: 3px; }
   .cl-scroll-hint { font-size: 0.72rem; letter-spacing: 4px; }
 }
+
+/* Login form scrollable on short screens */
+@media (max-height: 700px) {
+  .lfp-wrap {
+    bottom: auto;
+    top: 0;
+    align-items: flex-start;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    max-height: 100dvh;
+  }
+
+  .lfp-panel {
+    margin-bottom: 16px;
+  }
+}

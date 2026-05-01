@@ -128,6 +128,15 @@ canvas {
   }
 }
 
+/* ── Hub HUD font scaling ───────────────────────────────── */
+/* Hub uses inline fontSize:11 — boost readability via zoom */
+@media (max-width: 375px) {
+  /* Scale up the entire HUD layer slightly so 11px inline styles read at ~12px */
+  #hub-hud-root {
+    font-size: 12px;
+  }
+}
+
 /* ── Show/hide helpers ──────────────────────────────────── */
 @media (min-width: 769px) {
   .mobile-only { display: none !important; }

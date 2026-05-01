@@ -7,22 +7,6 @@ function fireKey(type, code, key) {
   window.dispatchEvent(new KeyboardEvent(type, { code, key, bubbles: true }));
 }
 
-const BUTTON_STYLE = {
-  position: 'fixed',
-  zIndex: 9999,
-  userSelect: 'none',
-  touchAction: 'none',
-  background: 'rgba(0,0,0,0.6)',
-  border: '1.5px solid #CC00FF',
-  color: '#CC00FF',
-  fontFamily: 'monospace',
-  fontSize: 11,
-  padding: '10px 16px',
-  borderRadius: 8,
-  letterSpacing: '0.1em',
-  cursor: 'pointer',
-};
-
 export default function MobileControls() {
   const thumbRef = useRef(null);
   const originRef = useRef(null);
@@ -110,71 +94,39 @@ export default function MobileControls() {
     };
   }, [setKey, releaseAll]);
 
-  const makeActionHandler = (code, key) => ({
-    onTouchStart: (e) => {
-      e.preventDefault();
-      fireKey('keydown', code, key);
-    },
-    onTouchEnd: (e) => {
-      e.preventDefault();
-      fireKey('keyup', code, key);
-    },
-  });
-
   return (
-    <>
-      {/* Joystick ring */}
+    <div
+      id="m3-joystick-ring"
+      style={{
+        position: 'fixed',
+        bottom: 80,
+        left: 30,
+        width: 100,
+        height: 100,
+        borderRadius: '50%',
+        background: 'rgba(0,0,0,0.5)',
+        border: '1.5px solid #00FFFF',
+        zIndex: 9999,
+        userSelect: 'none',
+        touchAction: 'none',
+      }}
+    >
+      {/* Thumb */}
       <div
-        id="m3-joystick-ring"
+        ref={thumbRef}
         style={{
-          position: 'fixed',
-          bottom: 80,
-          left: 30,
-          width: 100,
-          height: 100,
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          width: 40,
+          height: 40,
           borderRadius: '50%',
-          background: 'rgba(0,0,0,0.5)',
-          border: '1.5px solid #00FFFF',
-          zIndex: 9999,
-          userSelect: 'none',
-          touchAction: 'none',
+          background: 'rgba(0,255,255,0.25)',
+          border: '1.5px solid #CC00FF',
+          transform: 'translate(-50%, -50%)',
+          pointerEvents: 'none',
         }}
-      >
-        {/* Thumb */}
-        <div
-          ref={thumbRef}
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            background: 'rgba(0,255,255,0.25)',
-            border: '1.5px solid #CC00FF',
-            transform: 'translate(-50%, -50%)',
-            pointerEvents: 'none',
-          }}
-        />
-      </div>
-
-      {/* INTERACT button → E */}
-      <div
-        className="m3-action-btn"
-        style={{ ...BUTTON_STYLE, bottom: 120, right: 30 }}
-        {...makeActionHandler('KeyE', 'e')}
-      >
-        INTERACT
-      </div>
-
-      {/* ZONE button → F */}
-      <div
-        className="m3-action-btn"
-        style={{ ...BUTTON_STYLE, bottom: 60, right: 30 }}
-        {...makeActionHandler('KeyF', 'f')}
-      >
-        ZONE
-      </div>
-    </>
+      />
+    </div>
   );
 }

@@ -104,9 +104,9 @@ export default function Chatbox({ roomRef, typingUsers = new Map() }) {
   return (
     <div style={{
       position: 'absolute',
-      bottom: 12,
+      bottom: 60,
       right: 12,
-      width: 320,
+      width: 'min(320px, calc(100vw - 24px))',
       maxHeight: 400,
       background: 'rgba(0,0,0,0.8)',
       border: '1px solid #00ffff',

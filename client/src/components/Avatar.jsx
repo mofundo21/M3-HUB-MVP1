@@ -6,7 +6,19 @@ import * as THREE from 'three';
 const isMobileDevice = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;
 const SEG = isMobileDevice ? 8 : 16;
 
-export default function Avatar({ position, rotY = 0, username, pkg, isLocal }) {
+const DEFAULT_REMOTE_AVATAR = {
+  model: 'geometric_1',
+  primaryColor: '#0088aa',
+  secondaryColor: '#aa0088',
+  accentColor: '#888800',
+};
+
+function parseAvatar(json) {
+  if (!json) return null;
+  try { return JSON.parse(json); } catch { return null; }
+}
+
+export default function Avatar({ position, rotY = 0, username, pkg, isLocal, avatarJson, onClick }) {
   const groupRef = useRef();
   const targetPos = useRef(new THREE.Vector3(...position));
   const targetRot = useRef(rotY);
@@ -42,13 +54,15 @@ export default function Avatar({ position, rotY = 0, username, pkg, isLocal }) {
     }
   });
 
-  const primaryColor = isLocal ? avatar.primaryColor : '#0088aa';
-  const secondaryColor = isLocal ? avatar.secondaryColor : '#aa0088';
-  const accentColor = isLocal ? avatar.accentColor : '#888800';
-  const labelColor = isLocal ? '#ffffff' : '#aaaaaa';
+  const remoteAvatar = isLocal ? null : (parseAvatar(avatarJson) || DEFAULT_REMOTE_AVATAR);
+  const activeAvatar = isLocal ? avatar : remoteAvatar;
+  const primaryColor = activeAvatar.primaryColor;
+  const secondaryColor = activeAvatar.secondaryColor;
+  const accentColor = activeAvatar.accentColor;
+  const labelColor = isLocal ? '#ffffff' : '#cccccc';
 
   const renderAvatarModel = () => {
-    switch (avatar.model) {
+    switch (activeAvatar.model) {
       case 'geometric_1': // CUBE
         return (
           <>
@@ -124,7 +138,11 @@ export default function Avatar({ position, rotY = 0, username, pkg, isLocal }) {
   };
 
   return (
-    <group ref={groupRef} position={position}>
+    <group
+      ref={groupRef}
+      position={position}
+      onClick={(!isLocal && onClick) ? (e) => { e.stopPropagation(); onClick(); } : undefined}
+    >
       {renderAvatarModel()}
 
       {/* Glow ring for local player */}

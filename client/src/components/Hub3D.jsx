@@ -11,6 +11,10 @@ import Chatbox from './UI/Chatbox';
 import MobileControls from './MobileControls';
 import ProfilePanel from './ProfilePanel';
 import PlayerCard from './PlayerCard';
+import TopBar from './UI/TopBar';
+import BottomBar from './UI/BottomBar';
+import ZoneMenu from './UI/ZoneMenu';
+import PlayerList from './UI/PlayerList';
 import { useDevice } from '../context/DeviceContext';
 
 const COLYSEUS_URL = import.meta.env.VITE_COLYSEUS_URL || 'wss://m3-hub-mvp1-production.up.railway.app';
@@ -154,7 +158,10 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
   const [speechBubbles, setSpeechBubbles] = useState([]);
   const [typingUsers, setTypingUsers] = useState(new Map());
   const [showProfile, setShowProfile] = useState(false);
-  const [showChat, setShowChat] = useState(true);
+  const [showChat, setShowChat] = useState(false);
+  const [showZoneMenu, setShowZoneMenu] = useState(false);
+  const [currentZone, setCurrentZone] = useState('hub');
+  const [muted, setMuted] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const roomRef = useRef(null);
   const bubbleIdRef = useRef(0);
@@ -256,153 +263,83 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
   }, []);
 
   const handleZoneEnter = useCallback((zoneName) => {
+    setCurrentZone(zoneName);
     if (roomRef.current) {
       roomRef.current.send('zone', { zone: zoneName });
     }
     onZoneEnter(zoneName);
   }, [onZoneEnter]);
 
+  const avatarColor = (() => {
+    try {
+      const raw = localStorage.getItem('m3_avatar');
+      if (raw) return JSON.parse(raw)?.color || '#00ffff';
+    } catch {}
+    return '#00ffff';
+  })();
+
   return (
-    <div style={{ width: '100%', height: '100%' }}>
-      {/* Connection status */}
-      <div
-        className="m3-connection-badge"
-        style={{
-          position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
-          background: connected ? 'rgba(0,255,0,0.15)' : 'rgba(255,0,0,0.15)',
-          border: `1px solid ${connected ? '#00ff00' : '#ff0000'}`,
-          color: connected ? '#00ff00' : '#ff4444',
-          padding: '4px 14px',
-          borderRadius: 20,
-          fontSize: 11,
-          userSelect: 'none',
-          zIndex: 10,
-        }}>
-        {connected ? '● ONLINE' : '○ CONNECTING...'}
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      {/* Top bar */}
+      <TopBar
+        username={authUser?.username}
+        zone={currentZone.toUpperCase()}
+        playerCount={players.size}
+        avatarColor={avatarColor}
+        onProfile={() => setShowProfile(true)}
+      />
+
+      {/* 3D canvas — inset to leave room for top/bottom bars */}
+      <div style={{ position: 'absolute', top: 44, bottom: 52, left: 0, right: 0 }}>
+        <Canvas
+          camera={{ position: [0, 10, 8], fov: 60 }}
+          gl={{ antialias: !isMobile, powerPreference: isMobile ? 'low-power' : 'high-performance' }}
+          style={{ background: '#0a0a0f', touchAction: 'none', width: '100%', height: '100%' }}
+          dpr={isMobile ? [1, 1.5] : [1, 2]}
+        >
+          <HubScene
+            players={players}
+            mySessionId={mySessionId}
+            onMove={handleMove}
+            onZoneEnter={handleZoneEnter}
+            speechBubbles={speechBubbles}
+            isMobile={isMobile}
+            onPlayerClick={handlePlayerClick}
+          />
+        </Canvas>
+
+        {/* Mobile controls */}
+        {isMobile && <MobileControls />}
+
+        {/* Player list (top-right of canvas area) */}
+        {connected && (
+          <PlayerList players={players} mySessionId={mySessionId} />
+        )}
+
+        {/* Chatbox */}
+        {connected && showChat && (
+          <Chatbox roomRef={roomRef} typingUsers={typingUsers} />
+        )}
       </div>
 
-      {/* Profile button (top-left) */}
-      <button
-        onClick={() => setShowProfile(true)}
-        style={{
-          position: 'absolute', top: 12, left: 12,
-          background: 'rgba(0,255,255,0.15)',
-          border: '1px solid #00ffff',
-          color: '#00ffff',
-          padding: '8px 14px',
-          borderRadius: 8,
-          fontSize: 11,
-          cursor: 'pointer',
-          fontFamily: 'monospace',
-          fontWeight: 'bold',
-          userSelect: 'none',
-          zIndex: 10,
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.target.style.background = 'rgba(0,255,255,0.3)';
-          e.target.style.boxShadow = '0 0 15px rgba(0,255,255,0.4)';
-        }}
-        onMouseLeave={(e) => {
-          e.target.style.background = 'rgba(0,255,255,0.15)';
-          e.target.style.boxShadow = 'none';
-        }}
-      >
-        👤 {authUser?.username}
-      </button>
+      {/* Bottom bar */}
+      <BottomBar
+        showChat={showChat}
+        onChatToggle={() => setShowChat(v => !v)}
+        muted={muted}
+        onAudioToggle={() => setMuted(v => !v)}
+        onZoneMenu={() => setShowZoneMenu(v => !v)}
+        onLogout={onLogout}
+        connected={connected}
+      />
 
-      {/* User info + logout (top-right) */}
-      <div style={{
-        position: 'absolute', top: 12, right: 12,
-        background: 'rgba(0,0,0,0.6)',
-        border: '1px solid #00ffff',
-        color: '#00ffff',
-        padding: '8px 14px',
-        borderRadius: 8,
-        fontSize: 11,
-        userSelect: 'none',
-        zIndex: 10,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-      }}>
-        <span style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>● ONLINE</span>
-        <button
-          onClick={onLogout}
-          style={{
-            background: 'rgba(255,0,0,0.2)',
-            border: '1px solid #ff4444',
-            color: '#ff4444',
-            padding: '4px 10px',
-            borderRadius: 4,
-            fontSize: 10,
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            fontFamily: 'monospace',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.background = 'rgba(255,0,0,0.4)';
-            e.target.style.boxShadow = '0 0 10px rgba(255,0,0,0.5)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = 'rgba(255,0,0,0.2)';
-            e.target.style.boxShadow = 'none';
-          }}
-        >
-          LOGOUT
-        </button>
-      </div>
-
-      <Canvas
-        camera={{ position: [0, 10, 8], fov: 60 }}
-        gl={{ antialias: !isMobile, powerPreference: isMobile ? 'low-power' : 'high-performance' }}
-        style={{ background: '#0a0a0f', touchAction: 'none' }}
-        dpr={isMobile ? [1, 1.5] : [1, 2]}
-      >
-        <HubScene
-          players={players}
-          mySessionId={mySessionId}
-          onMove={handleMove}
-          onZoneEnter={handleZoneEnter}
-          speechBubbles={speechBubbles}
-          isMobile={isMobile}
-          onPlayerClick={handlePlayerClick}
-        />
-      </Canvas>
-
-      {/* Mobile controls */}
-      {isMobile && <MobileControls />}
-
-      {/* Chat toggle button */}
-      {connected && (
-        <button
-          onClick={() => setShowChat(v => !v)}
-          style={{
-            position: 'absolute', bottom: 12, right: 12,
-            background: showChat ? 'rgba(0,255,255,0.2)' : 'rgba(0,0,0,0.6)',
-            border: `1px solid ${showChat ? '#00ffff' : 'rgba(0,255,255,0.4)'}`,
-            color: '#00ffff',
-            padding: '8px 14px',
-            borderRadius: 8,
-            fontSize: 11,
-            fontFamily: 'monospace',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            zIndex: showChat ? 99 : 10,
-            userSelect: 'none',
-            minHeight: 44,
-            transition: 'all 0.2s',
-          }}
-        >
-          {showChat ? '✕ CHAT' : '💬 CHAT'}
-        </button>
-      )}
-
-      {/* Chatbox */}
-      {connected && showChat && (
-        <Chatbox roomRef={roomRef} typingUsers={typingUsers} />
-      )}
+      {/* Zone menu */}
+      <ZoneMenu
+        show={showZoneMenu}
+        currentZone={currentZone}
+        onZoneSelect={handleZoneEnter}
+        onClose={() => setShowZoneMenu(false)}
+      />
 
       {/* Profile Panel */}
       {showProfile && <ProfilePanel user={authUser} onClose={() => setShowProfile(false)} />}

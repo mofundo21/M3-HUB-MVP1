@@ -4,6 +4,7 @@ import CinematicLoginScene from './components/CinematicLoginScene';
 import MobileAuthModal from './components/MobileAuthModal';
 import AvatarCustomizer from './components/AvatarCustomizer';
 import { DeviceProvider, useDevice } from './context/DeviceContext';
+import { clearSession } from './hooks/usePersistence';
 
 function AppInner() {
   const [authUser, setAuthUser] = useState(null);
@@ -39,6 +40,7 @@ function AppInner() {
   const handleLogout = () => {
     localStorage.removeItem('m3_token');
     localStorage.removeItem('m3_user');
+    clearSession();
     setAuthUser(null);
   };
 

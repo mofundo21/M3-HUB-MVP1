@@ -16,18 +16,37 @@ import BottomBar from './UI/BottomBar';
 import ZoneMenu from './UI/ZoneMenu';
 import PlayerList from './UI/PlayerList';
 import { useDevice } from '../context/DeviceContext';
+import {
+  savePlayerPos, savePlayerRot, saveCameraPos,
+  getPlayerPos, getPlayerRot, getCameraPos,
+  saveZone, saveAudioMuted, saveChatOpen,
+  getZone, getAudioMuted, getChatOpen,
+  clearSession,
+} from '../hooks/usePersistence';
 
 const COLYSEUS_URL = import.meta.env.VITE_COLYSEUS_URL || 'wss://m3-hub-mvp1-production.up.railway.app';
 const MOVE_SPEED = 0.08;
 const UPDATE_RATE = 50; // ms between server position updates
+const SAVE_RATE = 500;  // ms between position saves to localStorage
 
 // ─── Player Controller ───────────────────────────────────────────────────────
 function PlayerController({ sessionId, players, onMove }) {
   const keys = useRef({});
-  const posRef = useRef(new THREE.Vector3(0, 0, 0));
-  const rotRef = useRef(0);
+  const savedPos = getPlayerPos();
+  const savedRot = getPlayerRot();
+  const posRef = useRef(new THREE.Vector3(savedPos.x, savedPos.y, savedPos.z));
+  const rotRef = useRef(savedRot.y);
   const lastSentRef = useRef(0);
+  const lastSavedRef = useRef(0);
   const { camera } = useThree();
+
+  // Restore camera position on first mount
+  useEffect(() => {
+    const cam = getCameraPos();
+    if (cam) {
+      camera.position.set(cam.x, cam.y, cam.z);
+    }
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (e) => { keys.current[e.code] = true; };
@@ -71,8 +90,9 @@ function PlayerController({ sessionId, players, onMove }) {
     );
     camera.lookAt(target.x, target.y + 1, target.z);
 
-    // Throttle server updates
     const now = Date.now();
+
+    // Throttle server updates
     if (now - lastSentRef.current > UPDATE_RATE) {
       lastSentRef.current = now;
       onMove({
@@ -81,6 +101,14 @@ function PlayerController({ sessionId, players, onMove }) {
         z: posRef.current.z,
         rotY: rotRef.current,
       });
+    }
+
+    // Throttle localStorage saves
+    if (now - lastSavedRef.current > SAVE_RATE) {
+      lastSavedRef.current = now;
+      savePlayerPos(posRef.current.x, posRef.current.y, posRef.current.z);
+      savePlayerRot(rotRef.current);
+      saveCameraPos(camera.position.x, camera.position.y, camera.position.z);
     }
   });
 
@@ -158,10 +186,10 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
   const [speechBubbles, setSpeechBubbles] = useState([]);
   const [typingUsers, setTypingUsers] = useState(new Map());
   const [showProfile, setShowProfile] = useState(false);
-  const [showChat, setShowChat] = useState(false);
+  const [showChat, setShowChat] = useState(() => getChatOpen());
   const [showZoneMenu, setShowZoneMenu] = useState(false);
-  const [currentZone, setCurrentZone] = useState('hub');
-  const [muted, setMuted] = useState(false);
+  const [currentZone, setCurrentZone] = useState(() => getZone());
+  const [muted, setMuted] = useState(() => getAudioMuted());
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const roomRef = useRef(null);
   const bubbleIdRef = useRef(0);
@@ -264,11 +292,28 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
 
   const handleZoneEnter = useCallback((zoneName) => {
     setCurrentZone(zoneName);
+    saveZone(zoneName);
     if (roomRef.current) {
       roomRef.current.send('zone', { zone: zoneName });
     }
     onZoneEnter(zoneName);
   }, [onZoneEnter]);
+
+  const handleChatToggle = useCallback(() => {
+    setShowChat(v => {
+      const next = !v;
+      saveChatOpen(next);
+      return next;
+    });
+  }, []);
+
+  const handleAudioToggle = useCallback(() => {
+    setMuted(v => {
+      const next = !v;
+      saveAudioMuted(next);
+      return next;
+    });
+  }, []);
 
   const avatarColor = (() => {
     try {
@@ -325,9 +370,9 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
       {/* Bottom bar */}
       <BottomBar
         showChat={showChat}
-        onChatToggle={() => setShowChat(v => !v)}
+        onChatToggle={handleChatToggle}
         muted={muted}
-        onAudioToggle={() => setMuted(v => !v)}
+        onAudioToggle={handleAudioToggle}
         onZoneMenu={() => setShowZoneMenu(v => !v)}
         onLogout={onLogout}
         connected={connected}

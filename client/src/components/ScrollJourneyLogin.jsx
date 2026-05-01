@@ -9,14 +9,14 @@ const LORE_SCENES = [
   { title: 'THE PORTAL', text: 'Three entities guide the experience: GEN (isolation & memory), KAL (chaos & exploration), PSY (synthesis & glitch).' },
   { title: 'LATENT SPACE', text: 'Navigate through the latent space—a dimension of pure creative potential where all possibilities exist.' },
   { title: 'DESCENT', text: 'M3 is more than an app. It\'s a ritual disguised as media—a living, breathing universe.' },
-  { title: 'WELCOME HOME', text: 'Enter the M3 Hub. Discover your place in this universe. Create, explore, recode.' }
+  { title: 'WELCOME HOME', text: 'Enter the M3 Hub. Discover your place in this universe. Create, explore, recode.' },
 ];
 
 export default function ScrollJourneyLogin({ onAuth }) {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [currentScene, setCurrentScene] = useState(0);
   const [formVisible, setFormVisible] = useState(false);
-  const containerRef = useRef(null);
+  const [crashed, setCrashed] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,32 +26,39 @@ export default function ScrollJourneyLogin({ onAuth }) {
       const progress = Math.min((scrollTop / docHeight) * 100, 100);
       setScrollProgress(progress);
       setCurrentScene(Math.min(Math.floor(progress / 20), 4));
-      if (progress >= 78) setFormVisible(true);
+      if (progress >= 85) setCrashed(true);
+      if (progress >= 90) setFormVisible(true);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Skip journey — jump straight to login (click anywhere hint)
-  const skip = () => {
-    setScrollProgress(100);
-    setCurrentScene(4);
-    setFormVisible(true);
-    window.scrollTo(0, document.documentElement.scrollHeight);
-  };
-
   return (
-    <div className="journey-container" ref={containerRef}>
-      <div className="scroll-spacer" style={{ height: '4000px' }} />
+    <div className="journey-container">
+      <div className="scroll-spacer" style={{ height: '5000px' }} />
       <div className="fixed-canvas">
         <Canvas camera={{ position: [0, 5, 25], fov: 75 }} dpr={Math.min(window.devicePixelRatio, 2)}>
-          <JourneyScene scrollProgress={scrollProgress} />
+          <JourneyScene scrollProgress={scrollProgress} crashed={crashed} />
         </Canvas>
       </div>
-      <SceneHUD currentScene={currentScene} scrollProgress={scrollProgress} onSkip={skip} />
+
+      {/* Screen flash on crash */}
+      {crashed && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'white', zIndex: 50,
+          animation: 'crashFlash 0.6s ease-out forwards', pointerEvents: 'none',
+        }} />
+      )}
+
+      <SceneHUD currentScene={currentScene} scrollProgress={scrollProgress} />
+
       {formVisible && (
-        <div className="form-overlay" style={{ animation: 'fadeIn 0.6s ease-out' }}>
+        <div style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
+          display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+          paddingBottom: '32px', animation: 'slideUpForm 0.7s cubic-bezier(0.16,1,0.3,1) forwards',
+        }}>
           <LoginFormOverlay onAuth={onAuth} compact />
         </div>
       )}
@@ -59,41 +66,86 @@ export default function ScrollJourneyLogin({ onAuth }) {
   );
 }
 
-function SceneHUD({ currentScene, scrollProgress, onSkip }) {
+function SceneHUD({ currentScene, scrollProgress }) {
   const scene = LORE_SCENES[Math.min(currentScene, 4)];
-  const sceneProgress = (scrollProgress % 20) / 20;
-  const textOpacity = Math.min(sceneProgress * 2.5, 1) * (1 - Math.max((sceneProgress - 0.75) * 4, 0));
+  const sceneLocal = scrollProgress % 20;
+
+  // Fade in first half of scene, fade out last quarter
+  const fadeIn = Math.min(sceneLocal / 6, 1);
+  const fadeOut = sceneLocal > 14 ? Math.max(1 - (sceneLocal - 14) / 6, 0) : 1;
+  const textOpacity = fadeIn * fadeOut;
+
+  const showScrollHint = currentScene === 0 && scrollProgress < 8;
+  const showProgress = scrollProgress > 2;
 
   return (
-    <div className="scene-hud">
-      <div className="scene-text-container">
-        <div className="scene-title" style={{ opacity: textOpacity }}>
+    <div className="scene-hud" style={{ pointerEvents: 'none' }}>
+      {/* Scene number */}
+      {showProgress && (
+        <div style={{
+          position: 'absolute', top: '28px', left: '50%', transform: 'translateX(-50%)',
+          color: 'rgba(0,255,255,0.4)', fontFamily: 'monospace', fontSize: '10px',
+          letterSpacing: '4px', textTransform: 'uppercase',
+        }}>
+          SCENE {currentScene + 1} / 5
+        </div>
+      )}
+
+      {/* Lore text — center of screen */}
+      <div style={{
+        position: 'absolute', top: '50%', left: '50%',
+        transform: 'translate(-50%, -50%)',
+        textAlign: 'center', maxWidth: '640px', padding: '0 24px',
+        opacity: textOpacity, transition: 'opacity 0.15s linear',
+      }}>
+        <div style={{
+          fontSize: 'clamp(1.6rem, 4vw, 2.8rem)', fontWeight: 700,
+          letterSpacing: '4px', textTransform: 'uppercase',
+          fontFamily: "'Space Mono', monospace",
+          color: '#00ffff',
+          textShadow: '0 0 30px rgba(0,255,255,0.8), 0 0 60px rgba(0,255,255,0.4)',
+          marginBottom: '20px', lineHeight: 1.2,
+        }}>
           {scene?.title}
         </div>
-        <div className="scene-text" style={{ opacity: Math.max(textOpacity - 0.1, 0) }}>
+        <div style={{
+          fontSize: 'clamp(0.9rem, 1.8vw, 1.1rem)', letterSpacing: '1px',
+          color: 'rgba(255,255,255,0.85)',
+          textShadow: '0 0 20px rgba(0,255,255,0.3)',
+          lineHeight: 1.7, fontFamily: "'IBM Plex Mono', monospace",
+          maxWidth: '520px', margin: '0 auto',
+        }}>
           {scene?.text}
         </div>
       </div>
 
-      {/* Scroll hint — only first scene */}
-      {currentScene === 0 && scrollProgress < 10 && (
-        <div style={{ position: 'absolute', bottom: '60px', left: '50%', transform: 'translateX(-50%)', color: 'rgba(0,255,255,0.6)', fontFamily: 'monospace', fontSize: '11px', letterSpacing: '3px', textTransform: 'uppercase', animation: 'pulse 2s infinite' }}>
-          ↓ SCROLL TO ENTER ↓
+      {/* Scroll to enter */}
+      {showScrollHint && (
+        <div style={{
+          position: 'absolute', bottom: '80px', left: '50%',
+          transform: 'translateX(-50%)',
+          color: '#00ffff', fontFamily: "'Space Mono', monospace",
+          fontSize: 'clamp(0.7rem, 1.5vw, 0.9rem)',
+          letterSpacing: '5px', textTransform: 'uppercase',
+          textShadow: '0 0 20px rgba(0,255,255,0.9), 0 0 40px rgba(0,255,255,0.5)',
+          animation: 'scrollPulse 1.8s ease-in-out infinite',
+          whiteSpace: 'nowrap',
+        }}>
+          ↓ &nbsp; SCROLL TO ENTER &nbsp; ↓
         </div>
       )}
 
-      {/* Skip button */}
-      {scrollProgress < 78 && (
-        <button
-          onClick={onSkip}
-          style={{ position: 'absolute', top: '20px', right: '20px', padding: '8px 16px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(0,255,255,0.3)', color: 'rgba(0,255,255,0.6)', fontFamily: 'monospace', fontSize: '10px', letterSpacing: '2px', cursor: 'pointer', borderRadius: '4px', backdropFilter: 'blur(4px)', pointerEvents: 'auto' }}
-        >
-          SKIP →
-        </button>
-      )}
-
-      <div className="scroll-indicator">
-        <div className="progress-bar" style={{ width: `${scrollProgress}%` }} />
+      {/* Progress bar */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        height: '3px', background: 'rgba(0,255,255,0.08)',
+      }}>
+        <div style={{
+          height: '100%', width: `${scrollProgress}%`,
+          background: 'linear-gradient(90deg, #00ffff, #ff00ff, #ffd700)',
+          boxShadow: '0 0 8px rgba(0,255,255,0.6)',
+          transition: 'width 0.1s linear',
+        }} />
       </div>
     </div>
   );

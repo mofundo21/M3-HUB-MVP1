@@ -1,53 +1,57 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import ShipModel from './ShipModel';
 
-export default function JourneyScene({ scrollProgress }) {
+export default function JourneyScene({ scrollProgress, crashed }) {
   const groupRef = useRef();
   const { camera } = useThree();
-  const particlesRef = useRef();
-  const sceneStateRef = useRef({ crystals: [] });
+  const shakeRef = useRef(0);
 
-  // Camera keyframes [scene, position, lookAt]
   const keyframes = [
-    { pos: [0, 5, 25], look: [0, 2, 0], scene: 0 },
-    { pos: [0, 8, 20], look: [0, 3, 5], scene: 1 },
-    { pos: [0, 6, 18], look: [0, 4, 8], scene: 2 },
-    { pos: [0, 4, 12], look: [0, 2, 10], scene: 3 },
-    { pos: [0, 2, 8], look: [0, 0, 15], scene: 4 },
+    { pos: [0, 5, 25] },
+    { pos: [0, 8, 20] },
+    { pos: [0, 6, 15] },
+    { pos: [0, 3, 10] },
+    { pos: [0, 1, 4] },
   ];
 
-  // Interpolate camera
   useEffect(() => {
     const idx = Math.min(Math.floor(scrollProgress / 20), 4);
     const nextIdx = Math.min(idx + 1, 4);
     const t = (scrollProgress % 20) / 20;
     const curr = keyframes[idx];
     const next = keyframes[nextIdx];
-
-    const pos = new THREE.Vector3(
+    const target = new THREE.Vector3(
       curr.pos[0] + (next.pos[0] - curr.pos[0]) * t,
       curr.pos[1] + (next.pos[1] - curr.pos[1]) * t,
-      curr.pos[2] + (next.pos[2] - curr.pos[2]) * t
+      curr.pos[2] + (next.pos[2] - curr.pos[2]) * t,
     );
-    camera.position.lerp(pos, 0.1);
-    camera.lookAt(0, 2, 10);
+    camera.position.lerp(target, 0.08);
+    camera.lookAt(0, 1, 0);
   }, [scrollProgress]);
 
+  // Screen shake on crash
+  useEffect(() => {
+    if (crashed) {
+      shakeRef.current = 1;
+    }
+  }, [crashed]);
+
   useFrame(() => {
+    if (shakeRef.current > 0) {
+      const s = shakeRef.current * 0.15;
+      camera.position.x += (Math.random() - 0.5) * s;
+      camera.position.y += (Math.random() - 0.5) * s;
+      shakeRef.current = Math.max(0, shakeRef.current - 0.025);
+    }
+
     if (groupRef.current) {
       const scene = Math.floor(scrollProgress / 20);
-
-      // Update lighting based on scene
-      const lights = groupRef.current.children.filter(c => c.isLight);
-      lights.forEach(light => {
-        if (light.userData.type === 'key') {
-          if (scene >= 3) {
-            light.color.lerp(new THREE.Color('#FFD700'), 0.05);
-          } else {
-            light.color.lerp(new THREE.Color('#00FFFF'), 0.05);
-          }
+      groupRef.current.children.forEach(c => {
+        if (c.isLight && c.userData.type === 'key') {
+          const target = scene >= 3 ? new THREE.Color('#FF8800') : new THREE.Color('#00FFFF');
+          c.color.lerp(target, 0.03);
         }
       });
     }
@@ -55,111 +59,97 @@ export default function JourneyScene({ scrollProgress }) {
 
   return (
     <group ref={groupRef}>
-      {/* Lights */}
-      <ambientLight intensity={0.3} />
-      <pointLight position={[10, 10, 10]} intensity={0.8} color="#00FFFF" userData={{ type: 'key' }} />
-      <pointLight position={[-8, 5, -10]} intensity={0.5} color="#FF00FF" />
+      <ambientLight intensity={0.25} />
+      <pointLight position={[10, 10, 10]} intensity={1} color="#00FFFF" userData={{ type: 'key' }} />
+      <pointLight position={[-8, 5, -10]} intensity={0.6} color="#FF00FF" />
 
-      {/* Stars background */}
       <Stars scrollProgress={scrollProgress} />
-
-      {/* Planets */}
-      <Planet position={[20, 10, -50]} size={8} color="#6600CC" scrollProgress={scrollProgress} />
-      <Planet position={[-15, 5, -40]} size={5} color="#00CCFF" scrollProgress={scrollProgress} />
-
-      {/* Portal (Scene 1-3) */}
-      <Portal scrollProgress={scrollProgress} visible={scrollProgress < 60} />
-
-      {/* Crystal field (Scene 2-3) */}
+      <BackgroundPlanets scrollProgress={scrollProgress} />
+      <Portal scrollProgress={scrollProgress} />
       <CrystalField scrollProgress={scrollProgress} />
-
-      {/* Atmosphere haze (Scene 3-5) */}
       <AtmosphereHaze scrollProgress={scrollProgress} />
-
-      {/* Earth-like destination planet (Scene 3→5) */}
       <EarthPlanet scrollProgress={scrollProgress} />
-
-      {/* Ship with smoke trail */}
       <ShipModel scrollProgress={scrollProgress} />
-
-      {/* Crash shockwave (Scene 5) */}
       <CrashShockwave scrollProgress={scrollProgress} />
-
-      {/* Landing particles (Scene 5) */}
-      <LandingParticles scrollProgress={scrollProgress} />
+      <ExplosionParticles scrollProgress={scrollProgress} />
     </group>
   );
 }
 
 function Stars({ scrollProgress }) {
   const stars = useMemo(() => {
-    const positions = [];
-    for (let i = 0; i < 500; i++) {
-      positions.push(
-        (Math.random() - 0.5) * 200,
-        (Math.random() - 0.5) * 200,
-        -Math.random() * 100 - 20
-      );
+    const pos = [];
+    for (let i = 0; i < 800; i++) {
+      pos.push((Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300, -Math.random() * 150 - 10);
     }
-    return new Float32Array(positions);
+    return new Float32Array(pos);
   }, []);
 
-  const starRef = useRef();
+  const ref = useRef();
   useFrame(() => {
-    if (starRef.current) {
-      starRef.current.rotation.z += 0.0001;
-    }
+    if (ref.current) ref.current.rotation.z += 0.00005;
   });
 
+  // Stars streak slightly during descent
+  const size = 0.2 + (scrollProgress / 100) * 0.3;
+
   return (
-    <points ref={starRef}>
+    <points ref={ref}>
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" array={stars} count={stars.length / 3} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial size={0.3} sizeAttenuation color="#FFFFFF" />
+      <pointsMaterial size={size} sizeAttenuation color="#FFFFFF" />
     </points>
   );
 }
 
-function Planet({ position, size, color, scrollProgress }) {
-  const mesh = useRef();
+function BackgroundPlanets({ scrollProgress }) {
+  const ref1 = useRef();
+  const ref2 = useRef();
   useFrame(() => {
-    if (mesh.current) mesh.current.rotation.y += 0.0002;
+    if (ref1.current) ref1.current.rotation.y += 0.0002;
+    if (ref2.current) ref2.current.rotation.y += 0.0001;
   });
-
-  const opacity = Math.max(0, 1 - (scrollProgress / 100) * 0.5);
+  const opacity = Math.max(0, 1 - scrollProgress / 80);
   return (
-    <mesh ref={mesh} position={position}>
-      <sphereGeometry args={[size, 32, 32]} />
-      <meshStandardMaterial emissive={color} emissiveIntensity={opacity * 0.4} color={color} />
-    </mesh>
+    <>
+      <mesh ref={ref1} position={[22, 12, -60]}>
+        <sphereGeometry args={[8, 32, 32]} />
+        <meshStandardMaterial emissive="#6600CC" emissiveIntensity={opacity * 0.5} color="#220044" transparent opacity={opacity} />
+      </mesh>
+      <mesh ref={ref2} position={[-18, 6, -50]}>
+        <sphereGeometry args={[5, 32, 32]} />
+        <meshStandardMaterial emissive="#00CCFF" emissiveIntensity={opacity * 0.4} color="#002244" transparent opacity={opacity} />
+      </mesh>
+    </>
   );
 }
 
-function Portal({ scrollProgress, visible }) {
+function Portal({ scrollProgress }) {
   const group = useRef();
-  const opacity = visible ? Math.min(scrollProgress / 20, 1, 1 - (scrollProgress - 40) / 20) : 0;
+  // Visible scenes 0→2, fades out scene 3
+  const opacity = Math.min(scrollProgress / 15, 1) * Math.max(1 - (scrollProgress - 40) / 15, 0);
 
   useFrame(() => {
-    if (group.current) {
-      group.current.children.forEach((ring, i) => {
-        ring.rotation.z += 0.01 * (i + 1);
-        const pulse = 1 + Math.sin(Date.now() * 0.001 + i) * 0.1;
-        ring.scale.set(pulse, pulse, pulse);
-      });
-    }
+    if (!group.current) return;
+    group.current.children.forEach((ring, i) => {
+      ring.rotation.z += 0.008 * (i % 2 === 0 ? 1 : -1);
+      const pulse = 1 + Math.sin(Date.now() * 0.001 + i * 1.2) * 0.08;
+      ring.scale.set(pulse, pulse, pulse);
+    });
   });
 
+  if (opacity <= 0) return null;
+
   return (
-    <group ref={group} position={[0, 5, 5]}>
-      {[1, 1.5, 2].map((scale, i) => (
-        <mesh key={i} scale={scale} position={[0, 0, 0]}>
-          <torusGeometry args={[2, 0.2, 16, 32]} />
+    <group ref={group} position={[0, 3, 8]}>
+      {[1, 1.4, 1.9].map((s, i) => (
+        <mesh key={i} scale={s}>
+          <torusGeometry args={[2.5, 0.15, 16, 64]} />
           <meshStandardMaterial
             emissive={i % 2 === 0 ? '#00FFFF' : '#FF00FF'}
-            emissiveIntensity={opacity * 0.8}
-            transparent
-            opacity={opacity}
+            emissiveIntensity={0.9}
+            transparent opacity={opacity}
           />
         </mesh>
       ))}
@@ -169,42 +159,34 @@ function Portal({ scrollProgress, visible }) {
 
 function CrystalField({ scrollProgress }) {
   const group = useRef();
-  const crystals = useMemo(() => {
-    const arr = [];
-    for (let i = 0; i < 20; i++) {
-      arr.push({
-        pos: [(Math.random() - 0.5) * 30, (Math.random() - 0.5) * 20, -10 - Math.random() * 15],
-        rot: [Math.random(), Math.random(), Math.random()],
-        scale: 0.5 + Math.random() * 1,
-      });
-    }
-    return arr;
-  }, []);
+  const crystals = useMemo(() => Array.from({ length: 24 }, () => ({
+    pos: [(Math.random() - 0.5) * 35, (Math.random() - 0.5) * 25, -12 - Math.random() * 18],
+    rot: [Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI],
+    scale: 0.4 + Math.random() * 1.2,
+  })), []);
+
+  const opacity = Math.min(Math.max((scrollProgress - 25) / 12, 0), 1) *
+                  Math.max(1 - (scrollProgress - 52) / 8, 0);
 
   useFrame(({ clock }) => {
-    if (group.current) {
-      group.current.children.forEach((child, i) => {
-        child.rotation.x = crystals[i].rot[0] + clock.elapsedTime * 0.3;
-        child.rotation.y = crystals[i].rot[1] + clock.elapsedTime * 0.2;
-        const depth = scrollProgress > 40 ? -10 - (scrollProgress - 40) * 0.3 : -10;
-        child.position.z = crystals[i].pos[2] + depth;
-      });
-    }
+    if (!group.current || opacity <= 0) return;
+    group.current.children.forEach((child, i) => {
+      child.rotation.x = crystals[i].rot[0] + clock.elapsedTime * 0.25;
+      child.rotation.y = crystals[i].rot[1] + clock.elapsedTime * 0.18;
+    });
   });
 
-  const opacity = Math.min(Math.max((scrollProgress - 30) / 15, 0), 1 - (scrollProgress - 55) / 5);
+  if (opacity <= 0) return null;
 
   return (
     <group ref={group}>
-      {crystals.map((crystal, i) => (
-        <mesh key={i} position={crystal.pos} rotation={crystal.rot} scale={crystal.scale}>
+      {crystals.map((c, i) => (
+        <mesh key={i} position={c.pos} scale={c.scale}>
           <octahedronGeometry args={[1, 0]} />
           <meshStandardMaterial
-            emissive="#00FFFF"
-            emissiveIntensity={opacity * 0.6}
-            transparent
-            opacity={Math.max(opacity, 0.2)}
-            wireframe={scrollProgress > 45 && scrollProgress < 55}
+            emissive="#00FFFF" emissiveIntensity={0.7}
+            transparent opacity={opacity * 0.85}
+            wireframe={scrollProgress > 42 && scrollProgress < 52}
           />
         </mesh>
       ))}
@@ -213,180 +195,167 @@ function CrystalField({ scrollProgress }) {
 }
 
 function AtmosphereHaze({ scrollProgress }) {
-  const mesh = useRef();
-  const atmosphereStart = 60;
-  const intensity = Math.max(0, Math.min((scrollProgress - atmosphereStart) / 20, 1));
+  const ref = useRef();
+  const intensity = Math.max(0, Math.min((scrollProgress - 58) / 22, 1));
 
   useFrame(() => {
-    if (mesh.current) {
-      mesh.current.material.emissiveIntensity = intensity * 0.8;
-    }
+    if (ref.current) ref.current.material.opacity = intensity * 0.35;
   });
 
   return (
-    <mesh ref={mesh} position={[0, -5, 20]} scale={[40, 20, 10]}>
+    <mesh ref={ref} position={[0, -6, 15]} scale={[50, 25, 15]}>
       <sphereGeometry args={[1, 32, 32]} />
-      <meshBasicMaterial
-        emissive="#FFD700"
-        emissiveIntensity={0}
-        transparent
-        opacity={intensity * 0.3}
-        side={THREE.BackSide}
-      />
+      <meshBasicMaterial transparent opacity={0} color="#FF8800" side={THREE.BackSide} />
     </mesh>
   );
 }
 
 function EarthPlanet({ scrollProgress }) {
-  const mesh = useRef();
+  const coreRef = useRef();
   const atmRef = useRef();
 
-  // Starts far away, grows as ship descends
-  const t = Math.max(0, (scrollProgress - 40) / 60); // 0 at scene2, 1 at scene5
-  const scale = 1 + t * 12;
-  const emissiveIntensity = 0.15 + t * 0.35;
+  const t = Math.max(0, (scrollProgress - 35) / 65);
+  const scale = 1 + t * 14;
 
   useFrame(() => {
-    if (mesh.current) mesh.current.rotation.y += 0.0003;
-    if (atmRef.current) {
-      atmRef.current.material.opacity = Math.min(t * 0.5, 0.4);
-    }
+    if (coreRef.current) coreRef.current.rotation.y += 0.0003;
+    if (atmRef.current) atmRef.current.material.opacity = Math.min(t * 0.55, 0.45);
   });
 
   return (
-    <group position={[0, -8, -30]}>
-      {/* Core planet */}
-      <mesh ref={mesh} scale={scale}>
+    <group position={[0, -10, -35]}>
+      <mesh ref={coreRef} scale={scale}>
         <sphereGeometry args={[3, 64, 64]} />
-        <meshStandardMaterial
-          color="#0a1a3a"
-          emissive="#1a3a6a"
-          emissiveIntensity={emissiveIntensity}
-        />
+        <meshStandardMaterial color="#081828" emissive="#1a3a6a" emissiveIntensity={0.15 + t * 0.4} />
       </mesh>
-      {/* Cyan continent glow patches */}
-      <mesh scale={scale * 1.01}>
-        <sphereGeometry args={[3, 32, 32]} />
+      {/* Grid overlay — continent suggestion */}
+      <mesh scale={scale * 1.005}>
+        <sphereGeometry args={[3, 24, 24]} />
         <meshStandardMaterial
-          color="#003366"
-          emissive="#00ffff"
-          emissiveIntensity={emissiveIntensity * 0.3}
-          transparent
-          opacity={0.4}
-          wireframe
+          emissive="#00ffff" emissiveIntensity={0.25}
+          transparent opacity={t * 0.35} wireframe
         />
       </mesh>
       {/* Atmosphere glow */}
-      <mesh ref={atmRef} scale={scale * 1.06}>
+      <mesh ref={atmRef} scale={scale * 1.07}>
         <sphereGeometry args={[3, 32, 32]} />
         <meshStandardMaterial
-          emissive="#00aaff"
-          emissiveIntensity={0.8}
-          transparent
-          opacity={0}
-          side={THREE.BackSide}
-          depthWrite={false}
+          emissive="#0088ff" emissiveIntensity={1}
+          transparent opacity={0} side={THREE.BackSide} depthWrite={false}
         />
       </mesh>
-      <pointLight position={[0, 0, 0]} intensity={t * 2} color="#00ccff" distance={scale * 15} />
+      <pointLight intensity={t * 2.5} color="#00ccff" distance={scale * 18} />
     </group>
   );
 }
 
 function CrashShockwave({ scrollProgress }) {
-  const ringRef = useRef();
-  const ring2Ref = useRef();
+  const r1 = useRef();
+  const r2 = useRef();
+  const r3 = useRef();
 
-  const crashT = Math.max(0, (scrollProgress - 88) / 12); // fires in final 12%
-  const scale = crashT * 8;
-  const opacity = Math.max(0, (1 - crashT) * 0.9);
+  const crashT = Math.max(0, (scrollProgress - 85) / 15);
 
   useFrame(() => {
-    if (ringRef.current) {
-      ringRef.current.scale.set(scale, scale, scale);
-      ringRef.current.material.opacity = opacity;
-    }
-    if (ring2Ref.current) {
-      const s2 = Math.max(0, crashT - 0.15) * 6;
-      ring2Ref.current.scale.set(s2, s2, s2);
-      ring2Ref.current.material.opacity = Math.max(0, (1 - (crashT - 0.15)) * 0.7);
-    }
+    if (!r1.current) return;
+    const s1 = crashT * 10;
+    const s2 = Math.max(0, crashT - 0.1) * 8;
+    const s3 = Math.max(0, crashT - 0.25) * 6;
+
+    r1.current.scale.set(s1, s1, s1);
+    r1.current.material.opacity = Math.max(0, (1 - crashT) * 0.95);
+
+    r2.current.scale.set(s2, s2, s2);
+    r2.current.material.opacity = Math.max(0, (1 - Math.max(crashT - 0.1, 0) / 0.9) * 0.8);
+
+    r3.current.scale.set(s3, s3, s3);
+    r3.current.material.opacity = Math.max(0, (1 - Math.max(crashT - 0.25, 0) / 0.75) * 0.6);
   });
 
-  if (crashT <= 0) return null;
-
   return (
-    <group position={[0, 0, 0]}>
-      <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[1, 0.08, 8, 64]} />
-        <meshStandardMaterial emissive="#ff6600" emissiveIntensity={2} transparent opacity={opacity} depthWrite={false} />
+    <group position={[0, 0, 2]}>
+      <mesh ref={r1} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[1, 0.1, 8, 64]} />
+        <meshStandardMaterial emissive="#ff6600" emissiveIntensity={3} transparent opacity={0} depthWrite={false} />
       </mesh>
-      <mesh ref={ring2Ref} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh ref={r2} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[1, 0.07, 8, 64]} />
+        <meshStandardMaterial emissive="#ffcc00" emissiveIntensity={3} transparent opacity={0} depthWrite={false} />
+      </mesh>
+      <mesh ref={r3} rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[1, 0.05, 8, 64]} />
-        <meshStandardMaterial emissive="#ffff00" emissiveIntensity={2} transparent opacity={0} depthWrite={false} />
+        <meshStandardMaterial emissive="#ffffff" emissiveIntensity={3} transparent opacity={0} depthWrite={false} />
       </mesh>
-      {crashT > 0 && crashT < 0.3 && (
-        <pointLight position={[0, 0, 0]} intensity={5 * (1 - crashT / 0.3)} color="#ff4400" distance={20} />
+      {crashT > 0 && crashT < 0.4 && (
+        <pointLight intensity={8 * (1 - crashT / 0.4)} color="#ff5500" distance={30} />
       )}
     </group>
   );
 }
 
-function LandingParticles({ scrollProgress }) {
-  const points = useRef();
-  const particleData = useMemo(() => {
-    const positions = new Float32Array(150 * 3);
-    const velocities = new Float32Array(150 * 3);
-    const lifetimes = new Float32Array(150);
-    for (let i = 0; i < 150; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 5 + Math.random() * 5;
-      positions[i * 3] = Math.cos(angle) * speed * 0.1;
-      positions[i * 3 + 1] = Math.random() * 5;
-      positions[i * 3 + 2] = Math.sin(angle) * speed * 0.1;
-      velocities[i * 3] = Math.cos(angle) * speed;
-      velocities[i * 3 + 1] = 2 + Math.random() * 3;
-      velocities[i * 3 + 2] = Math.sin(angle) * speed;
-      lifetimes[i] = 1.5;
+function ExplosionParticles({ scrollProgress }) {
+  const ref = useRef();
+  const data = useMemo(() => {
+    const N = 200;
+    const positions = new Float32Array(N * 3);
+    const velocities = [];
+    for (let i = 0; i < N; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI;
+      const speed = 3 + Math.random() * 8;
+      velocities.push(
+        Math.sin(phi) * Math.cos(theta) * speed,
+        Math.abs(Math.cos(phi)) * speed * 0.8 + 1,
+        Math.sin(phi) * Math.sin(theta) * speed,
+      );
     }
-    return { positions, velocities, lifetimes };
+    return { positions, velocities, age: new Float32Array(N).fill(-1) };
   }, []);
 
-  const landingStart = 80;
-  const landingProgress = Math.max(0, (scrollProgress - landingStart) / 20);
-  const shouldSpawn = landingProgress > 0 && landingProgress < 1;
+  const spawnedRef = useRef(false);
+  const frameCount = useRef(0);
 
   useFrame(() => {
-    if (points.current && shouldSpawn) {
-      const pos = points.current.geometry.attributes.position.array;
-      const vel = particleData.velocities;
-      const life = particleData.lifetimes;
+    if (!ref.current) return;
+    const crashT = Math.max(0, (scrollProgress - 85) / 15);
 
-      for (let i = 0; i < 150; i++) {
-        if (life[i] > 0 && landingProgress > 0) {
-          pos[i * 3] += vel[i * 3] * 0.016;
-          pos[i * 3 + 1] += (vel[i * 3 + 1] - 0.5) * 0.016;
-          pos[i * 3 + 2] += vel[i * 3 + 2] * 0.016;
-          life[i] -= 0.016;
-        }
+    // Spawn once on crash
+    if (crashT > 0.05 && !spawnedRef.current) {
+      spawnedRef.current = true;
+      data.age.fill(0);
+      for (let i = 0; i < 200; i++) {
+        data.positions[i * 3] = 0;
+        data.positions[i * 3 + 1] = 0;
+        data.positions[i * 3 + 2] = 2;
       }
-      points.current.geometry.attributes.position.needsUpdate = true;
     }
+
+    if (!spawnedRef.current) return;
+
+    const dt = 0.016;
+    const pos = ref.current.geometry.attributes.position.array;
+
+    for (let i = 0; i < 200; i++) {
+      if (data.age[i] < 0) continue;
+      data.age[i] += dt;
+      const t = data.age[i];
+      if (t > 2.5) { data.age[i] = -1; continue; }
+      pos[i * 3]     = data.positions[i * 3]     + data.velocities[i * 3]     * t;
+      pos[i * 3 + 1] = data.positions[i * 3 + 1] + data.velocities[i * 3 + 1] * t - 4 * t * t;
+      pos[i * 3 + 2] = data.positions[i * 3 + 2] + data.velocities[i * 3 + 2] * t;
+    }
+    ref.current.geometry.attributes.position.needsUpdate = true;
+
+    const alive = Array.from(data.age).filter(a => a >= 0).length;
+    ref.current.material.opacity = alive > 0 ? Math.min(alive / 200, 1) * 0.9 : 0;
   });
 
   return (
-    <points ref={points} position={[0, 0, 10]}>
+    <points ref={ref}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" array={particleData.positions} count={150} itemSize={3} />
+        <bufferAttribute attach="attributes-position" array={data.positions} count={200} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial
-        size={0.3}
-        sizeAttenuation
-        color="#FFD700"
-        emissive="#FF6600"
-        opacity={Math.max(0, 1 - landingProgress * 0.5)}
-        transparent
-      />
+      <pointsMaterial size={0.25} sizeAttenuation color="#ff8800" transparent opacity={0} depthWrite={false} />
     </points>
   );
 }

@@ -1,3 +1,23 @@
+## GSD Workflow
+
+This project uses **Get Shit Done (GSD)** for planning and execution.
+
+**Always check `.planning/STATE.md` for current phase before starting work.**
+
+### Key files
+- `.planning/PROJECT.md` — project context and requirements
+- `.planning/ROADMAP.md` — 5 phases, mobile optimization milestone
+- `.planning/STATE.md` — current phase and session log
+- `.planning/REQUIREMENTS.md` — REQ-IDs with traceability
+
+### Commands
+- `/gsd-plan-phase N` — plan a phase
+- `/gsd-execute-phase N` — execute a phase
+- `/gsd-progress` — check status
+- `/gsd-verify-work` — verify phase goal achieved
+
+---
+
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
 

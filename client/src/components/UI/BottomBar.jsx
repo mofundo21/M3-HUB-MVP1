@@ -1,4 +1,5 @@
 import React from 'react';
+import { useDevice } from '../../context/DeviceContext';
 
 const S = {
   bar: {
@@ -7,19 +8,19 @@ const S = {
     left: 0,
     right: 0,
     height: 52,
-    background: 'rgba(0,0,0,0.8)',
+    background: 'rgba(0,0,0,0.85)',
     borderTop: '1px solid rgba(0,255,255,0.3)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
     zIndex: 20,
-    backdropFilter: 'blur(4px)',
+    backdropFilter: 'blur(6px)',
     userSelect: 'none',
     padding: '0 8px',
   },
   btn: (active) => ({
-    minWidth: 52,
+    minWidth: 44,
     minHeight: 44,
     display: 'flex',
     flexDirection: 'column',
@@ -34,13 +35,18 @@ const S = {
     fontFamily: 'monospace',
     fontSize: 9,
     letterSpacing: '0.05em',
-    padding: '4px 10px',
+    padding: '4px 8px',
     transition: 'all 0.15s',
     flex: 1,
     maxWidth: 72,
+    touchAction: 'manipulation',
   }),
   icon: {
-    fontSize: 16,
+    fontSize: 18,
+    lineHeight: 1,
+  },
+  label: {
+    fontSize: 9,
     lineHeight: 1,
   },
   sep: {
@@ -50,7 +56,7 @@ const S = {
     flexShrink: 0,
   },
   logout: {
-    minWidth: 52,
+    minWidth: 44,
     minHeight: 44,
     display: 'flex',
     flexDirection: 'column',
@@ -64,10 +70,11 @@ const S = {
     cursor: 'pointer',
     fontFamily: 'monospace',
     fontSize: 9,
-    padding: '4px 10px',
+    padding: '4px 8px',
     transition: 'all 0.15s',
     flex: 1,
     maxWidth: 72,
+    touchAction: 'manipulation',
   },
 };
 
@@ -80,30 +87,32 @@ export default function BottomBar({
   onLogout,
   connected,
 }) {
+  const { isMobile } = useDevice();
+
   return (
     <div style={S.bar}>
       <button style={S.btn(showChat)} onClick={onChatToggle} disabled={!connected}>
         <span style={S.icon}>💬</span>
-        CHAT
+        {!isMobile && <span style={S.label}>CHAT</span>}
       </button>
 
       <button style={S.btn(muted)} onClick={onAudioToggle}>
         <span style={S.icon}>{muted ? '🔇' : '🔊'}</span>
-        {muted ? 'MUTED' : 'AUDIO'}
+        {!isMobile && <span style={S.label}>{muted ? 'MUTED' : 'AUDIO'}</span>}
       </button>
 
       <div style={S.sep} />
 
       <button style={S.btn(false)} onClick={onZoneMenu}>
         <span style={S.icon}>🗺️</span>
-        ZONES
+        {!isMobile && <span style={S.label}>ZONES</span>}
       </button>
 
       <div style={S.sep} />
 
       <button style={S.logout} onClick={onLogout}>
         <span style={S.icon}>🚪</span>
-        LEAVE
+        {!isMobile && <span style={S.label}>LEAVE</span>}
       </button>
     </div>
   );

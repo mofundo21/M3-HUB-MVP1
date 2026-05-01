@@ -1,9 +1,6 @@
-/**
- * Simple JSON file-based store for MVP local dev.
- * No native deps required.
- */
 const fs = require('fs');
 const path = require('path');
+const { randomUUID } = require('crypto');
 
 const DB_PATH = path.join(__dirname, '../../m3hub.json');
 
@@ -41,7 +38,7 @@ function getDb() {
     createUser({ firstName, lastName, email, password, pkg, username }) {
       const data = load();
       const user = {
-        id: data.nextId++,
+        id: randomUUID(),
         firstName, lastName, email, password, pkg, username,
         createdAt: new Date().toISOString(),
         lastLoginAt: new Date().toISOString(),
@@ -61,6 +58,10 @@ function getDb() {
 
     findUserByEmail(email) {
       return load().users.find(u => u.email === email) || null;
+    },
+
+    findUserByUsername(username) {
+      return load().users.find(u => u.username && u.username.toLowerCase() === username.toLowerCase()) || null;
     },
 
     findUserById(id) {

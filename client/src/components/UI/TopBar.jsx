@@ -1,4 +1,5 @@
 import React from 'react';
+import { useDevice } from '../../context/DeviceContext';
 
 const S = {
   bar: {
@@ -7,28 +8,31 @@ const S = {
     left: 0,
     right: 0,
     height: 44,
-    background: 'rgba(0,0,0,0.75)',
+    background: 'rgba(0,0,0,0.8)',
     borderBottom: '1px solid rgba(0,255,255,0.3)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '0 12px',
+    padding: '0 10px',
     zIndex: 20,
-    backdropFilter: 'blur(4px)',
+    backdropFilter: 'blur(6px)',
     userSelect: 'none',
+    boxSizing: 'border-box',
   },
   left: {
     display: 'flex',
     alignItems: 'center',
-    gap: 8,
+    gap: 7,
     minWidth: 0,
+    flex: 1,
   },
   avatar: {
-    width: 24,
-    height: 24,
+    width: 26,
+    height: 26,
     borderRadius: '50%',
     border: '2px solid #00ffff',
     flexShrink: 0,
+    cursor: 'pointer',
   },
   username: {
     color: '#00ffff',
@@ -38,7 +42,7 @@ const S = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    maxWidth: 120,
+    maxWidth: 110,
   },
   center: {
     position: 'absolute',
@@ -50,11 +54,12 @@ const S = {
     letterSpacing: '0.15em',
     textTransform: 'uppercase',
     opacity: 0.7,
+    pointerEvents: 'none',
   },
   right: {
     display: 'flex',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     flexShrink: 0,
   },
   stat: {
@@ -70,16 +75,18 @@ const S = {
     height: 6,
     borderRadius: '50%',
     background: '#00ff00',
-    display: 'inline-block',
+    flexShrink: 0,
   },
 };
 
 export default function TopBar({ username, zone = 'HUB', playerCount = 0, avatarColor = '#00ffff', onProfile }) {
+  const { isMobile } = useDevice();
+
   return (
     <div style={S.bar}>
       <div style={S.left}>
         <div
-          style={{ ...S.avatar, background: avatarColor, cursor: onProfile ? 'pointer' : 'default' }}
+          style={{ ...S.avatar, background: avatarColor }}
           onClick={onProfile}
           title="View profile"
         />
@@ -91,10 +98,12 @@ export default function TopBar({ username, zone = 'HUB', playerCount = 0, avatar
       </div>
 
       <div style={S.right}>
-        <span style={S.stat}>
-          <span style={S.dot} />
-          {playerCount} online
-        </span>
+        {!isMobile && (
+          <span style={S.stat}>
+            <span style={S.dot} />
+            {playerCount} online
+          </span>
+        )}
       </div>
     </div>
   );

@@ -19,11 +19,22 @@
       "pkg": "ME0001",
       "username": "ME0001",
       "createdAt": "2026-04-01T22:23:45.557Z"
+    },
+    {
+      "id": 3,
+      "firstName": "Mofundo",
+      "lastName": "",
+      "email": "mofundo1@gmail.com",
+      "password": "$2a$10$5cu0mbF1sou78iBqOyaP0u06duhbbUO41UfHp94LWnTqZMpYJdW/y",
+      "pkg": "MO0001",
+      "username": "MOFUNDO0002",
+      "createdAt": "2026-05-01T00:00:00.000Z"
     }
   ],
   "pkgCounters": {
     "YF": 1,
-    "ME": 1
+    "ME": 1,
+    "MO": 1
   },
-  "nextId": 3
+  "nextId": 4
 }

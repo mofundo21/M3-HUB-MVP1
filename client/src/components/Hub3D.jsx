@@ -115,28 +115,90 @@ function PlayerController({ sessionId, players, onMove }) {
   return null;
 }
 
+// ─── Floating particles ───────────────────────────────────────────────────────
+function AtmosphericParticles({ count = 120 }) {
+  const ref = useRef();
+  const positions = useRef(
+    Float32Array.from({ length: count * 3 }, (_, i) =>
+      i % 3 === 1 ? Math.random() * 12 + 1 : (Math.random() - 0.5) * 60
+    )
+  );
+  useFrame((_, delta) => {
+    if (!ref.current) return;
+    const pos = ref.current.geometry.attributes.position.array;
+    for (let i = 0; i < count; i++) {
+      pos[i * 3 + 1] += delta * 0.4;
+      if (pos[i * 3 + 1] > 14) pos[i * 3 + 1] = 0.5;
+    }
+    ref.current.geometry.attributes.position.needsUpdate = true;
+  });
+  return (
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions.current, 3]} />
+      </bufferGeometry>
+      <pointsMaterial size={0.08} color="#00ffff" transparent opacity={0.5} sizeAttenuation />
+    </points>
+  );
+}
+
+// ─── Zone portal pillar ───────────────────────────────────────────────────────
+function ZonePortal({ position, color, label, zoneName, onEnter }) {
+  const ringRef = useRef();
+  useFrame((state) => {
+    if (ringRef.current) {
+      ringRef.current.rotation.y = state.clock.elapsedTime * 1.2;
+    }
+  });
+  return (
+    <group position={position} onClick={() => onEnter(zoneName)}>
+      {/* Base pillar */}
+      <mesh position={[0, 1, 0]}>
+        <cylinderGeometry args={[0.3, 0.5, 2, 8]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.4} metalness={0.8} roughness={0.2} />
+      </mesh>
+      {/* Spinning ring */}
+      <mesh ref={ringRef} position={[0, 2.5, 0]}>
+        <torusGeometry args={[0.7, 0.08, 8, 24]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1} />
+      </mesh>
+      {/* Glow point */}
+      <pointLight position={[0, 2.5, 0]} intensity={1.2} color={color} distance={8} />
+    </group>
+  );
+}
+
 // ─── Scene ────────────────────────────────────────────────────────────────────
 function HubScene({ players, mySessionId, onMove, onZoneEnter, speechBubbles, isMobile, onPlayerClick }) {
-  const gridDivisions = isMobile ? 25 : 50;
+  const gridDivisions = isMobile ? 20 : 40;
   return (
     <>
-      {/* Lighting — fewer lights on mobile */}
-      <ambientLight intensity={isMobile ? 0.5 : 0.3} color="#0a0a2e" />
-      <pointLight position={[0, 8, 0]} intensity={1.5} color="#00ffff" distance={30} />
-      {!isMobile && <pointLight position={[15, 6, 0]} intensity={1} color="#00ff00" distance={20} />}
-      {!isMobile && <pointLight position={[-15, 6, 0]} intensity={1} color="#ffff00" distance={20} />}
-      <pointLight position={[0, 6, 0]} intensity={0.8} color="#ff00ff" distance={20} />
+      {/* Lighting */}
+      <ambientLight intensity={isMobile ? 0.5 : 0.35} color="#080820" />
+      <pointLight position={[0, 10, 0]} intensity={2} color="#00ffff" distance={35} />
+      {!isMobile && <pointLight position={[20, 6, 0]} intensity={1.2} color="#00ff88" distance={22} />}
+      {!isMobile && <pointLight position={[-20, 6, 0]} intensity={1.2} color="#ff00ff" distance={22} />}
+      <pointLight position={[0, 4, 15]} intensity={0.8} color="#ffff00" distance={18} />
 
-      {/* Ground plane */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+      {/* Ground plane — tiled look */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
         <planeGeometry args={[200, 200]} />
-        <meshStandardMaterial color="#0a0a0f" metalness={0.4} roughness={0.8} />
+        <meshStandardMaterial color="#06060f" metalness={0.5} roughness={0.7} />
       </mesh>
 
-      {/* Grid overlay — half density on mobile */}
-      <gridHelper args={[100, gridDivisions, '#111133', '#0d0d2e']} position={[0, 0, 0]} />
+      {/* Grid overlay */}
+      <gridHelper args={[120, gridDivisions, '#0a0a33', '#080820']} position={[0, 0.01, 0]} />
 
-      {/* Zones */}
+      {/* Atmospheric particles (desktop only for perf) */}
+      {!isMobile && <AtmosphericParticles count={100} />}
+
+      {/* Zone portals */}
+      <ZonePortal position={[0, 0, -18]}  color="#ff00ff" label="PORTAL"  zoneName="portal"  onEnter={onZoneEnter} />
+      <ZonePortal position={[18, 0, 0]}   color="#00ff00" label="STORE"   zoneName="store"   onEnter={onZoneEnter} />
+      <ZonePortal position={[-18, 0, 0]}  color="#00ffff" label="GALLERY" zoneName="gallery" onEnter={onZoneEnter} />
+      <ZonePortal position={[0, 0, 18]}   color="#ffaa00" label="MUSIC"   zoneName="music"   onEnter={onZoneEnter} />
+
+      {/* Legacy zone + gallery (keep for room logic) */}
       <Zone name="portal" position={[0, 0, 0]} color="#ff00ff" label="PORTAL" onEnter={onZoneEnter} />
       <Zone name="store" position={[15, 0, 0]} color="#00ff00" label="STORE" onEnter={onZoneEnter} />
 

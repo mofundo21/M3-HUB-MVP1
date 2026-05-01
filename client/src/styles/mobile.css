@@ -1,29 +1,80 @@
-/* Mobile-specific overrides — loaded globally, scoped via media queries */
+/* ── Mobile + Responsive overrides ───────────────────────────────────────── */
 
-@media (max-width: 768px) {
+/* ── Login form: mobile-first ─────────────────────────────────────────────── */
+.lfp-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+}
 
-  /* ── Joystick ────────────────────────────────────────── */
-  #m3-joystick-ring {
-    bottom: 90px !important;
-    left: 24px !important;
-    width: 110px !important;
-    height: 110px !important;
+.lfp-panel {
+  width: 100%;
+  max-width: 420px;
+  box-sizing: border-box;
+}
+
+.lfp-input {
+  font-size: 16px !important; /* prevent iOS auto-zoom */
+  min-height: 44px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.lfp-btn {
+  min-height: 44px;
+  width: 100%;
+  box-sizing: border-box;
+  touch-action: manipulation;
+}
+
+/* ── 375px – iPhone SE ────────────────────────────────────────────────────── */
+@media (max-width: 390px) {
+  .lfp-panel {
+    padding: 16px !important;
   }
 
-  /* ── Action buttons (INTERACT / ZONE) ────────────────── */
+  .lfp-title {
+    font-size: 18px !important;
+  }
+
+  .lfp-subtitle {
+    font-size: 9px !important;
+  }
+}
+
+/* ── ≤768px – phones & small tablets ─────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Joystick */
+  #m3-joystick-ring {
+    bottom: 80px !important;
+    left: 20px !important;
+    width: 100px !important;
+    height: 100px !important;
+  }
+
+  /* Action buttons */
   .m3-action-btn {
     min-width: 72px !important;
     min-height: 52px !important;
     font-size: 13px !important;
     padding: 12px 18px !important;
+    touch-action: manipulation;
   }
 
-  /* ── Chat input ──────────────────────────────────────── */
-  .m3-chat-input {
-    font-size: 16px !important; /* prevent iOS auto-zoom */
+  /* Chat input – prevents iOS zoom */
+  .m3-chat-input,
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    font-size: 16px !important;
   }
 
-  /* ── Profile panel full-screen on mobile ─────────────── */
+  /* Profile panel – full screen */
   .m3-profile-panel {
     inset: 0 !important;
     border-radius: 0 !important;
@@ -31,40 +82,88 @@
     max-width: 100% !important;
   }
 
-  /* ── Connection badge — move below top HUD row ───────── */
+  /* Connection badge */
   .m3-connection-badge {
-    top: 60px !important;
+    top: 52px !important;
     font-size: 10px !important;
   }
 
-  /* ── Login journey scroll ─────────────────────────────── */
+  /* Login journey */
   .cinematic-login-root {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
   }
 
-  /* ── AvatarCustomizer — stack columns ────────────────── */
+  /* Avatar customizer */
   .avatar-customizer-grid {
     flex-direction: column !important;
   }
+
+  /* Chatbox – full width, reduced height */
+  .m3-chatbox {
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 52px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+    max-height: 55vh !important;
+  }
+
+  /* Player list – compact */
+  .m3-player-list {
+    top: 52px !important;
+    right: 8px !important;
+    font-size: 10px !important;
+    max-height: 120px !important;
+  }
+
+  /* Zone menu – wider on mobile */
+  .m3-zone-panel {
+    width: 240px !important;
+  }
 }
 
-/* ── Landscape phone: shrink joystick to not block scene ── */
+/* ── Landscape phone ──────────────────────────────────────────────────────── */
 @media (max-width: 768px) and (orientation: landscape) {
   #m3-joystick-ring {
-    bottom: 16px !important;
-    width: 90px !important;
-    height: 90px !important;
+    bottom: 12px !important;
+    width: 80px !important;
+    height: 80px !important;
   }
 
   .m3-action-btn {
-    bottom: 16px !important;
+    bottom: 12px !important;
+  }
+
+  .m3-chatbox {
+    max-height: 45vh !important;
   }
 }
 
-/* ── Retina / high-DPI: sharper thin borders ──────────── */
+/* ── Tablet 768–1024px ────────────────────────────────────────────────────── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  #m3-joystick-ring {
+    bottom: 80px !important;
+    left: 24px !important;
+    width: 110px !important;
+    height: 110px !important;
+  }
+
+  .m3-chatbox {
+    width: 280px !important;
+  }
+}
+
+/* ── High-DPI: sharper borders ────────────────────────────────────────────── */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
   #m3-joystick-ring {
     border-width: 1px !important;
   }
+}
+
+/* ── Touch targets: ensure 44px minimum everywhere ──────────────────────── */
+button, [role="button"] {
+  min-height: 44px;
+  touch-action: manipulation;
 }

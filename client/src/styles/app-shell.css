@@ -1,0 +1,118 @@
+.app-loading {
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(63, 81, 181, 0.22), transparent 24%),
+    radial-gradient(circle at 82% 22%, rgba(178, 223, 219, 0.14), transparent 20%),
+    linear-gradient(180deg, #080b18 0%, #0c1022 100%);
+  color: var(--iktis-white);
+  font-family: var(--iktis-font-body);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.app-shell {
+  min-height: 100vh;
+  background: transparent;
+}
+
+.app-shell__topbar {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 20px;
+  border: 1px solid var(--iktis-border);
+  background: rgba(12, 16, 35, 0.76);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--iktis-panel-shadow);
+  color: var(--iktis-white);
+  font-family: var(--iktis-font-body);
+}
+
+.app-shell__brand {
+  display: grid;
+}
+
+.app-shell__eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(226, 236, 255, 0.62);
+  font-family: var(--iktis-font-head);
+}
+
+.app-shell__brand strong {
+  margin-top: 4px;
+  font-size: 1rem;
+  font-family: var(--iktis-font-head);
+}
+
+.app-shell__nav {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.app-shell__tab,
+.app-shell__logout {
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--iktis-white);
+  cursor: pointer;
+  font: inherit;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.app-shell__tab--active {
+  border-color: rgba(122, 136, 255, 0.42);
+  box-shadow: 0 0 20px rgba(122, 136, 255, 0.16);
+  background: rgba(63, 81, 181, 0.2);
+}
+
+.app-shell__tab--pink.app-shell__tab--active {
+  border-color: rgba(178, 223, 219, 0.42);
+  box-shadow: 0 0 20px rgba(178, 223, 219, 0.14);
+  background: rgba(178, 223, 219, 0.12);
+}
+
+.app-shell__user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-shell__logout {
+  border-color: rgba(255, 97, 44, 0.34);
+  color: #ffb79c;
+}
+
+.app-shell__tab:hover,
+.app-shell__logout:hover {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 900px) {
+  .app-shell__topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .app-shell__user {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

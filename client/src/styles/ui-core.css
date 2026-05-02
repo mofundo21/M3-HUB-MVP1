@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;500;600&display=swap');
+
+:root {
+  color-scheme: dark;
+  --iktis-primary: #3f51b5;
+  --iktis-secondary: #b2dfdb;
+  --iktis-background: #f5f5f5;
+  --iktis-surface: rgba(16, 20, 42, 0.78);
+  --iktis-surface-soft: rgba(18, 24, 53, 0.58);
+  --iktis-text: #494a64;
+  --iktis-text-soft: #8891a7;
+  --iktis-warning: #ff612c;
+  --iktis-glow: #7a88ff;
+  --iktis-glow-soft: rgba(122, 136, 255, 0.2);
+  --iktis-teal-glow: rgba(178, 223, 219, 0.34);
+  --iktis-border: rgba(179, 191, 255, 0.18);
+  --iktis-line: rgba(184, 196, 228, 0.14);
+  --iktis-white: #f8faff;
+  --iktis-panel-shadow: 0 24px 60px rgba(10, 18, 44, 0.28);
+  --iktis-radius-lg: 24px;
+  --iktis-radius-md: 16px;
+  --iktis-font-head: 'Montserrat', sans-serif;
+  --iktis-font-body: 'Open Sans', sans-serif;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--iktis-font-body);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(63, 81, 181, 0.36), transparent 24%),
+    radial-gradient(circle at 80% 20%, rgba(178, 223, 219, 0.16), transparent 22%),
+    radial-gradient(circle at 48% 70%, rgba(124, 88, 255, 0.12), transparent 24%),
+    linear-gradient(180deg, #080b18 0%, #0c1022 48%, #070a16 100%);
+  color: var(--iktis-white);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+.iktis-kicker {
+  font-family: var(--iktis-font-head);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.iktis-panel {
+  background: linear-gradient(180deg, rgba(12, 16, 35, 0.84), rgba(9, 12, 28, 0.76));
+  border: 1px solid var(--iktis-border);
+  border-radius: var(--iktis-radius-lg);
+  box-shadow: var(--iktis-panel-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.iktis-chip {
+  border: 1px solid rgba(178, 223, 219, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--iktis-white);
+  border-radius: 999px;
+}
+
+.iktis-grid-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 52px 52px;
+  opacity: 0.12;
+}

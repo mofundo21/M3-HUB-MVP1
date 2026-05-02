@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API = 'https://m3-hub-mvp1-production.up.railway.app';
+const API =
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3001'
+    : 'https://m3-hub-mvp1-production.up.railway.app';
 
 export default function LoginFormOverlay({ onAuth, compact = false }) {
   const [user, setUser] = useState('');
@@ -15,8 +18,8 @@ export default function LoginFormOverlay({ onAuth, compact = false }) {
     setLoad(true);
     try {
       const payload = mode === 'login'
-        ? { email: user, password: pass }
-        : { email: user, username: user, password: pass };
+        ? { email: user, username: user, password: pass }
+        : { username: user, password: pass };
       const res = await axios.post(`${API}/api/auth/${fn}`, payload);
       onAuth(res.data.token, res.data.user, mode === 'register');
     } catch (e) {
@@ -50,7 +53,7 @@ export default function LoginFormOverlay({ onAuth, compact = false }) {
       {!compact && <div style={styles.glowOrb2} />}
 
       {/* Main form */}
-      <div style={styles.formBox}>
+      <div className="login-form-box" style={styles.formBox}>
         {/* Top accent line */}
         <div style={styles.accentLine} />
 
@@ -84,14 +87,15 @@ export default function LoginFormOverlay({ onAuth, compact = false }) {
         {/* Form inputs */}
         <div style={styles.inputGroup}>
           <label style={styles.label}>
-            {mode === 'login' ? '📧 EMAIL' : '👤 USERNAME'}
+            {mode === 'login' ? '👤 USERNAME OR EMAIL' : '👤 USERNAME'}
           </label>
           <input
             type="text"
-            placeholder={mode === 'login' ? 'your@email.com' : 'choose a username'}
+            placeholder={mode === 'login' ? 'username or email' : 'choose a username'}
+            autoComplete={mode === 'login' ? 'username' : 'username'}
             value={user}
             onChange={(e) => setUser(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && !load && submit(mode)}
+            onKeyDown={(e) => e.key === 'Enter' && !load && submit(mode)}
             disabled={load}
             style={styles.input}
           />
@@ -102,9 +106,10 @@ export default function LoginFormOverlay({ onAuth, compact = false }) {
           <input
             type="password"
             placeholder="••••••••"
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
             value={pass}
             onChange={(e) => setPass(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && !load && submit(mode)}
+            onKeyDown={(e) => e.key === 'Enter' && !load && submit(mode)}
             disabled={load}
             style={styles.input}
           />
@@ -183,6 +188,17 @@ export default function LoginFormOverlay({ onAuth, compact = false }) {
         @keyframes glow2 {
           0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.1; }
           50% { transform: translate(-40px, 40px) scale(1.1); opacity: 0.15; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 480px) {
+          .login-form-box {
+            padding: 24px 20px !important;
+            margin: 12px !important;
+            max-width: calc(100vw - 24px) !important;
+          }
         }
       `}</style>
     </div>
@@ -360,7 +376,7 @@ const styles = {
     background: 'rgba(0, 26, 51, 0.9)',
     border: '1px solid rgba(0,255,255,0.3)',
     color: '#00ffff',
-    fontSize: '13px',
+    fontSize: '16px', // 16px prevents iOS auto-zoom on focus
     borderRadius: '6px',
     fontFamily: 'monospace',
     transition: 'all 0.3s ease',

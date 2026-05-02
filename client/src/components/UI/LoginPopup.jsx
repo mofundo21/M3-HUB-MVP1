@@ -14,7 +14,7 @@ export default function LoginPopup({ onAuth }) {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/auth/login`, { username, password });
+      const res = await axios.post(`${API_BASE_URL}/api/auth/login`, { email: username, username, password });
       onAuth(res.data.token, res.data.user);
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed');
@@ -60,13 +60,14 @@ export default function LoginPopup({ onAuth }) {
 
   const boxStyle = {
     background: '#1a1a2e', border: '1px solid #444', borderRadius: 12,
-    padding: 32, width: 340, color: '#fff', fontFamily: 'sans-serif',
+    padding: 32, width: '100%', maxWidth: 400, color: '#fff', fontFamily: 'sans-serif',
+    boxSizing: 'border-box', margin: '0 16px',
   };
 
   const inputStyle = {
     width: '100%', padding: '10px 12px', margin: '6px 0 14px',
     background: '#0f0f1a', border: '1px solid #555', borderRadius: 6,
-    color: '#fff', fontSize: 14, boxSizing: 'border-box',
+    color: '#fff', fontSize: 16, boxSizing: 'border-box', // 16px prevents iOS auto-zoom
   };
 
   const btnStyle = (color) => ({
@@ -99,8 +100,11 @@ export default function LoginPopup({ onAuth }) {
         <label style={{ fontSize: 13, color: '#aaa' }}>Username</label>
         <input
           style={inputStyle}
+          type="text"
+          autoComplete={mode === 'login' ? 'username' : 'username'}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && !loading && (mode === 'login' ? handleLogin() : handleRegister())}
           placeholder="Enter username"
           disabled={loading}
         />
@@ -109,8 +113,10 @@ export default function LoginPopup({ onAuth }) {
         <input
           style={inputStyle}
           type="password"
+          autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && !loading && (mode === 'login' ? handleLogin() : handleRegister())}
           placeholder="Enter password"
           disabled={loading}
         />

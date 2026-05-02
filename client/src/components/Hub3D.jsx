@@ -4,49 +4,38 @@ import { Client } from 'colyseus.js';
 import * as THREE from 'three';
 import Avatar from './Avatar';
 import Zone from './Zone';
-import PortalGate from './PortalGate';
 import SpeechBubble from './SpeechBubble';
-import GalleryRoom from './GalleryRoom';
 import Chatbox from './UI/Chatbox';
 import MobileControls from './MobileControls';
 import ProfilePanel from './ProfilePanel';
-import PlayerCard from './PlayerCard';
-import TopBar from './UI/TopBar';
-import BottomBar from './UI/BottomBar';
-import ZoneMenu from './UI/ZoneMenu';
-import PlayerList from './UI/PlayerList';
-import { useDevice } from '../context/DeviceContext';
-import {
-  savePlayerPos, savePlayerRot, saveCameraPos,
-  getPlayerPos, getPlayerRot, getCameraPos,
-  saveZone, saveAudioMuted, saveChatOpen,
-  getZone, getAudioMuted, getChatOpen,
-  clearSession,
-} from '../hooks/usePersistence';
+import Store from './UI/Store';
+import Gallery from './UI/Gallery';
 
 const COLYSEUS_URL = import.meta.env.VITE_COLYSEUS_URL || 'wss://m3-hub-mvp1-production.up.railway.app';
 const MOVE_SPEED = 0.08;
-const UPDATE_RATE = 50; // ms between server position updates
-const SAVE_RATE = 500;  // ms between position saves to localStorage
+const UPDATE_RATE = 50;
+const SAVE_RATE = 500;
+const POS_KEY = 'm3_player_pos';
 
-// ─── Player Controller ───────────────────────────────────────────────────────
+function loadSavedPos() {
+  try {
+    const raw = localStorage.getItem(POS_KEY);
+    if (raw) {
+      const { x, y, z, rotY } = JSON.parse(raw);
+      return { pos: new THREE.Vector3(x ?? 0, y ?? 0, z ?? 0), rotY: rotY ?? 0 };
+    }
+  } catch {}
+  return { pos: new THREE.Vector3(0, 0, 0), rotY: 0 };
+}
+
 function PlayerController({ sessionId, players, onMove }) {
   const keys = useRef({});
-  const savedPos = getPlayerPos();
-  const savedRot = getPlayerRot();
-  const posRef = useRef(new THREE.Vector3(savedPos.x, savedPos.y, savedPos.z));
-  const rotRef = useRef(savedRot.y);
+  const saved = useRef(loadSavedPos());
+  const posRef = useRef(saved.current.pos);
+  const rotRef = useRef(saved.current.rotY);
   const lastSentRef = useRef(0);
   const lastSavedRef = useRef(0);
   const { camera } = useThree();
-
-  // Restore camera position on first mount
-  useEffect(() => {
-    const cam = getCameraPos();
-    if (cam) {
-      camera.position.set(cam.x, cam.y, cam.z);
-    }
-  }, []);
 
   useEffect(() => {
     const onKeyDown = (e) => { keys.current[e.code] = true; };
@@ -76,13 +65,11 @@ function PlayerController({ sessionId, players, onMove }) {
       dir.normalize().multiplyScalar(MOVE_SPEED);
       posRef.current.add(dir);
 
-      // Face direction of travel
       if (dir.length() > 0) {
         rotRef.current = Math.atan2(dir.x, dir.z);
       }
     }
 
-    // Smooth camera follow
     const target = posRef.current;
     camera.position.lerp(
       new THREE.Vector3(target.x, target.y + 10, target.z + 8),
@@ -92,7 +79,6 @@ function PlayerController({ sessionId, players, onMove }) {
 
     const now = Date.now();
 
-    // Throttle server updates
     if (now - lastSentRef.current > UPDATE_RATE) {
       lastSentRef.current = now;
       onMove({
@@ -103,19 +89,20 @@ function PlayerController({ sessionId, players, onMove }) {
       });
     }
 
-    // Throttle localStorage saves
     if (now - lastSavedRef.current > SAVE_RATE) {
       lastSavedRef.current = now;
-      savePlayerPos(posRef.current.x, posRef.current.y, posRef.current.z);
-      savePlayerRot(rotRef.current);
-      saveCameraPos(camera.position.x, camera.position.y, camera.position.z);
+      localStorage.setItem(POS_KEY, JSON.stringify({
+        x: posRef.current.x,
+        y: posRef.current.y,
+        z: posRef.current.z,
+        rotY: rotRef.current,
+      }));
     }
   });
 
   return null;
 }
 
-// ─── Floating particles ───────────────────────────────────────────────────────
 function AtmosphericParticles({ count = 120 }) {
   const ref = useRef();
   const positions = useRef(
@@ -142,7 +129,6 @@ function AtmosphericParticles({ count = 120 }) {
   );
 }
 
-// ─── Zone portal pillar ───────────────────────────────────────────────────────
 function ZonePortal({ position, color, label, zoneName, onEnter }) {
   const ringRef = useRef();
   useFrame((state) => {
@@ -152,66 +138,47 @@ function ZonePortal({ position, color, label, zoneName, onEnter }) {
   });
   return (
     <group position={position} onClick={() => onEnter(zoneName)}>
-      {/* Base pillar */}
       <mesh position={[0, 1, 0]}>
         <cylinderGeometry args={[0.3, 0.5, 2, 8]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.4} metalness={0.8} roughness={0.2} />
       </mesh>
-      {/* Spinning ring */}
       <mesh ref={ringRef} position={[0, 2.5, 0]}>
         <torusGeometry args={[0.7, 0.08, 8, 24]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1} />
       </mesh>
-      {/* Glow point */}
       <pointLight position={[0, 2.5, 0]} intensity={1.2} color={color} distance={8} />
     </group>
   );
 }
 
-// ─── Scene ────────────────────────────────────────────────────────────────────
-function HubScene({ players, mySessionId, onMove, onZoneEnter, speechBubbles, isMobile, onPlayerClick }) {
-  const gridDivisions = isMobile ? 20 : 40;
+function HubScene({ players, mySessionId, onMove, onZoneEnter, speechBubbles, isMobile }) {
   return (
     <>
-      {/* Lighting */}
       <ambientLight intensity={isMobile ? 0.5 : 0.35} color="#080820" />
       <pointLight position={[0, 10, 0]} intensity={2} color="#00ffff" distance={35} />
       {!isMobile && <pointLight position={[20, 6, 0]} intensity={1.2} color="#00ff88" distance={22} />}
       {!isMobile && <pointLight position={[-20, 6, 0]} intensity={1.2} color="#ff00ff" distance={22} />}
       <pointLight position={[0, 4, 15]} intensity={0.8} color="#ffff00" distance={18} />
 
-      {/* Ground plane — tiled look */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
         <planeGeometry args={[200, 200]} />
         <meshStandardMaterial color="#06060f" metalness={0.5} roughness={0.7} />
       </mesh>
 
-      {/* Grid overlay */}
-      <gridHelper args={[120, gridDivisions, '#0a0a33', '#080820']} position={[0, 0.01, 0]} />
+      <gridHelper args={[120, isMobile ? 20 : 40, '#0a0a33', '#080820']} position={[0, 0.01, 0]} />
 
-      {/* Atmospheric particles (desktop only for perf) */}
       {!isMobile && <AtmosphericParticles count={100} />}
 
-      {/* Zone portals */}
       <ZonePortal position={[0, 0, -18]}  color="#ff00ff" label="PORTAL"  zoneName="portal"  onEnter={onZoneEnter} />
       <ZonePortal position={[18, 0, 0]}   color="#00ff00" label="STORE"   zoneName="store"   onEnter={onZoneEnter} />
       <ZonePortal position={[-18, 0, 0]}  color="#00ffff" label="GALLERY" zoneName="gallery" onEnter={onZoneEnter} />
       <ZonePortal position={[0, 0, 18]}   color="#ffaa00" label="MUSIC"   zoneName="music"   onEnter={onZoneEnter} />
 
-      {/* Legacy zone + gallery (keep for room logic) */}
-      <Zone name="portal" position={[0, 0, 0]} color="#ff00ff" label="PORTAL" onEnter={onZoneEnter} />
       <Zone name="store" position={[15, 0, 0]} color="#00ff00" label="STORE" onEnter={onZoneEnter} />
+      <Zone name="gallery" position={[-15, 0, 0]} color="#ffff00" label="GALLERY" onEnter={onZoneEnter} />
 
-      {/* Gallery Portal Gate */}
-      <PortalGate position={[-15, 0, 0]} />
-
-      {/* Gallery Room */}
-      <GalleryRoom position={[-15, 0, 0]} />
-
-      {/* Player controller (local) */}
       <PlayerController sessionId={mySessionId} players={players} onMove={onMove} />
 
-      {/* All players */}
       {Array.from(players.entries()).map(([sessionId, player]) => (
         <Avatar
           key={sessionId}
@@ -221,11 +188,9 @@ function HubScene({ players, mySessionId, onMove, onZoneEnter, speechBubbles, is
           pkg={player.pkg}
           isLocal={sessionId === mySessionId}
           avatarJson={player.avatar}
-          onClick={sessionId !== mySessionId ? () => onPlayerClick(player) : undefined}
         />
       ))}
 
-      {/* Speech bubbles */}
       {speechBubbles.map((bubble) => (
         <SpeechBubble
           key={bubble.id}
@@ -240,7 +205,6 @@ function HubScene({ players, mySessionId, onMove, onZoneEnter, speechBubbles, is
   );
 }
 
-// ─── Hub3D ────────────────────────────────────────────────────────────────────
 export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
   const [players, setPlayers] = useState(new Map());
   const [mySessionId, setMySessionId] = useState(null);
@@ -248,16 +212,11 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
   const [speechBubbles, setSpeechBubbles] = useState([]);
   const [typingUsers, setTypingUsers] = useState(new Map());
   const [showProfile, setShowProfile] = useState(false);
-  const [showChat, setShowChat] = useState(() => getChatOpen());
-  const [showZoneMenu, setShowZoneMenu] = useState(false);
-  const [currentZone, setCurrentZone] = useState(() => getZone());
-  const [muted, setMuted] = useState(() => getAudioMuted());
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [currentZone, setCurrentZone] = useState(null);
+  const [isMobile] = useState(() => window.innerWidth < 600);
   const roomRef = useRef(null);
   const bubbleIdRef = useRef(0);
-  const { isMobile } = useDevice();
 
-  // Connect to Colyseus
   useEffect(() => {
     if (!authUser) return;
 
@@ -272,7 +231,6 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
         roomRef.current = room;
         setMySessionId(room.sessionId);
         setConnected(true);
-        console.log('[Colyseus] Joined hub, sessionId:', room.sessionId);
 
         const updatePlayers = () => {
           const map = new Map();
@@ -307,7 +265,6 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
           updatePlayers();
         });
 
-        // Chat message listener
         room.onMessage('chatMessage', (data) => {
           const senderPlayer = room.state.players.get(data.sessionId);
           if (senderPlayer) {
@@ -320,14 +277,12 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
                 position: [senderPlayer.x, senderPlayer.y + 2.5, senderPlayer.z],
               },
             ]);
-            // Auto-remove bubble after animation
             setTimeout(() => {
               setSpeechBubbles((prev) => prev.filter((b) => b.id !== bubbleId));
-            }, 5100); // 300ms fade in + 4000ms hold + 800ms fade out
+            }, 5100);
           }
         });
 
-        // Initial state
         updatePlayers();
       })
       .catch((err) => {
@@ -348,113 +303,95 @@ export default function Hub3D({ authUser, onZoneEnter, onLogout }) {
     }
   }, []);
 
-  const handlePlayerClick = useCallback((player) => {
-    setSelectedPlayer(player);
-  }, []);
-
   const handleZoneEnter = useCallback((zoneName) => {
     setCurrentZone(zoneName);
-    saveZone(zoneName);
     if (roomRef.current) {
       roomRef.current.send('zone', { zone: zoneName });
     }
     onZoneEnter(zoneName);
   }, [onZoneEnter]);
 
-  const handleChatToggle = useCallback(() => {
-    setShowChat(v => {
-      const next = !v;
-      saveChatOpen(next);
-      return next;
-    });
-  }, []);
-
-  const handleAudioToggle = useCallback(() => {
-    setMuted(v => {
-      const next = !v;
-      saveAudioMuted(next);
-      return next;
-    });
-  }, []);
-
-  const avatarColor = (() => {
-    try {
-      const raw = localStorage.getItem('m3_avatar');
-      if (raw) return JSON.parse(raw)?.color || '#00ffff';
-    } catch {}
-    return '#00ffff';
-  })();
-
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {/* Top bar */}
-      <TopBar
-        username={authUser?.username}
-        zone={currentZone.toUpperCase()}
-        playerCount={players.size}
-        avatarColor={avatarColor}
-        onProfile={() => setShowProfile(true)}
-      />
-
-      {/* 3D canvas — inset to leave room for top/bottom bars */}
-      <div style={{ position: 'absolute', top: 44, bottom: 52, left: 0, right: 0 }}>
-        <Canvas
-          camera={{ position: [0, 10, 8], fov: 60 }}
-          gl={{ antialias: !isMobile, powerPreference: isMobile ? 'low-power' : 'high-performance' }}
-          style={{ background: '#0a0a0f', touchAction: 'none', width: '100%', height: '100%' }}
-          dpr={isMobile ? [1, 1.5] : [1, 2]}
-        >
-          <HubScene
-            players={players}
-            mySessionId={mySessionId}
-            onMove={handleMove}
-            onZoneEnter={handleZoneEnter}
-            speechBubbles={speechBubbles}
-            isMobile={isMobile}
-            onPlayerClick={handlePlayerClick}
-          />
-        </Canvas>
-
-        {/* Mobile controls */}
-        {isMobile && <MobileControls />}
-
-        {/* Player list (top-right of canvas area) */}
-        {connected && (
-          <PlayerList players={players} mySessionId={mySessionId} />
-        )}
-
-        {/* Chatbox */}
-        {connected && showChat && (
-          <Chatbox roomRef={roomRef} typingUsers={typingUsers} />
-        )}
+      {/* Connection status */}
+      <div style={{
+        position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+        background: connected ? 'rgba(0,255,0,0.15)' : 'rgba(255,0,0,0.15)',
+        border: `1px solid ${connected ? '#00ff00' : '#ff0000'}`,
+        color: connected ? '#00ff00' : '#ff4444',
+        padding: '4px 14px', borderRadius: 20, fontSize: 11,
+        userSelect: 'none', zIndex: 10,
+      }}>
+        {connected ? '● ONLINE' : '○ CONNECTING...'}
       </div>
 
-      {/* Bottom bar */}
-      <BottomBar
-        showChat={showChat}
-        onChatToggle={handleChatToggle}
-        muted={muted}
-        onAudioToggle={handleAudioToggle}
-        onZoneMenu={() => setShowZoneMenu(v => !v)}
-        onLogout={onLogout}
-        connected={connected}
-      />
+      {/* Profile button */}
+      <button
+        onClick={() => setShowProfile(true)}
+        style={{
+          position: 'absolute', top: 12, left: 12,
+          background: 'rgba(0,255,255,0.15)', border: '1px solid #00ffff',
+          color: '#00ffff', padding: '8px 14px', borderRadius: 8,
+          fontSize: 11, cursor: 'pointer', fontFamily: 'monospace',
+          fontWeight: 'bold', userSelect: 'none', zIndex: 10,
+        }}
+      >
+        👤 {authUser?.username}
+      </button>
 
-      {/* Zone menu */}
-      <ZoneMenu
-        show={showZoneMenu}
-        currentZone={currentZone}
-        onZoneSelect={handleZoneEnter}
-        onClose={() => setShowZoneMenu(false)}
-      />
+      {/* Logout */}
+      <div style={{
+        position: 'absolute', top: 12, right: 12,
+        background: 'rgba(0,0,0,0.6)', border: '1px solid #00ffff',
+        color: '#00ffff', padding: '8px 14px', borderRadius: 8,
+        fontSize: 11, userSelect: 'none', zIndex: 10,
+        display: 'flex', alignItems: 'center', gap: '12px',
+      }}>
+        <button
+          onClick={onLogout}
+          style={{
+            background: 'rgba(255,0,0,0.2)', border: '1px solid #ff4444',
+            color: '#ff4444', padding: '4px 10px', borderRadius: 4,
+            fontSize: 10, cursor: 'pointer', fontWeight: 'bold', fontFamily: 'monospace',
+          }}
+        >
+          LOGOUT
+        </button>
+      </div>
 
-      {/* Profile Panel */}
+      <Canvas
+        camera={(() => {
+          try {
+            const raw = localStorage.getItem(POS_KEY);
+            if (raw) {
+              const { x = 0, z = 0 } = JSON.parse(raw);
+              return { position: [x, 10, z + 8], fov: 60 };
+            }
+          } catch {}
+          return { position: [0, 10, 8], fov: 60 };
+        })()}
+        gl={{ antialias: !isMobile, powerPreference: isMobile ? 'low-power' : 'high-performance' }}
+        style={{ background: '#0a0a0f', touchAction: 'none' }}
+        dpr={isMobile ? [1, 1.5] : [1, 2]}
+      >
+        <HubScene
+          players={players}
+          mySessionId={mySessionId}
+          onMove={handleMove}
+          onZoneEnter={handleZoneEnter}
+          speechBubbles={speechBubbles}
+          isMobile={isMobile}
+        />
+      </Canvas>
+
+      {isMobile && <MobileControls />}
+
+      {connected && <Chatbox roomRef={roomRef} typingUsers={typingUsers} />}
+
       {showProfile && <ProfilePanel user={authUser} onClose={() => setShowProfile(false)} />}
 
-      {/* Player Card */}
-      {selectedPlayer && (
-        <PlayerCard player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
-      )}
+      {currentZone === 'store' && <Store onClose={() => setCurrentZone(null)} />}
+      {currentZone === 'gallery' && <Gallery onClose={() => setCurrentZone(null)} />}
     </div>
   );
 }

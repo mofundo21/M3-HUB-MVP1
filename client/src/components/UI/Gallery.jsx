@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const PLACEHOLDER_PHOTOS = [
   { id: 1, title: 'NYE 2025 Set', date: 'Dec 31, 2024', color: '#ffff0033' },
@@ -11,22 +11,44 @@ const PLACEHOLDER_PHOTOS = [
 
 export default function Gallery({ onClose }) {
   const [selected, setSelected] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 600);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const width = isMobile ? '100%' : 340;
+  const top = isMobile ? 'auto' : 0;
+  const bottom = isMobile ? 0 : 0;
+  const height = isMobile ? '70vh' : 'auto';
+  const borderRight = isMobile ? 'none' : '2px solid #ffff00';
+  const borderTop = isMobile ? '2px solid #ffff00' : 'none';
 
   return (
     <div style={{
-      position: 'fixed', left: 0, top: 0, bottom: 0,
-      width: 340,
+      position: 'fixed', left: 0, top,
+      width,
+      height,
+      bottom,
       background: '#0d0d14',
-      borderRight: '2px solid #ffff00',
-      boxShadow: '10px 0 40px rgba(255,255,0,0.15)',
+      borderRight,
+      borderTop,
+      boxShadow: isMobile ? '0 -10px 40px rgba(255,255,0,0.15)' : '10px 0 40px rgba(255,255,0,0.15)',
       zIndex: 500,
       display: 'flex', flexDirection: 'column',
-      animation: 'slideInLeft 0.25s ease',
+      animation: isMobile ? 'slideInUp 0.3s ease-out' : 'slideInLeft 0.3s ease-out',
     }}>
       <style>{`
         @keyframes slideInLeft {
-          from { transform: translateX(-100%); }
-          to { transform: translateX(0); }
+          from { transform: translateX(-100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideInUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
         }
       `}</style>
 

@@ -8,6 +8,7 @@ export default function Chatbox({ roomRef, typingUsers = new Map() }) {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const typingTimeoutRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -101,174 +102,245 @@ export default function Chatbox({ roomRef, typingUsers = new Map() }) {
     .filter(([_, isTyping]) => isTyping)
     .map(([sessionId, _]) => sessionId);
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 600);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const lastMsg = messages[messages.length - 1];
+
   return (
     <div style={{
-      position: 'absolute',
-      bottom: 60,
-      right: 12,
-      width: 'min(320px, calc(100vw - 24px))',
-      maxHeight: 400,
-      background: 'rgba(0,0,0,0.8)',
-      border: '1px solid #00ffff',
-      borderRadius: 8,
-      display: 'flex',
-      flexDirection: 'column',
-      zIndex: 100,
+      position: 'fixed',
+      bottom: isMobile ? 10 : 20,
+      right: isMobile ? 10 : 20,
       fontFamily: "'Courier New', monospace",
-      color: '#00ffff',
+      zIndex: 100,
+      transition: 'all 0.3s ease',
     }}>
-      {/* Messages area */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '8px 12px',
-        fontSize: 11,
-        minHeight: 100,
-        maxHeight: 200,
-        borderBottom: '1px solid #003333',
-      }}>
-        {messages.length === 0 ? (
-          <div style={{ color: '#666', textAlign: 'center', marginTop: 20 }}>
-            No messages yet
-          </div>
-        ) : (
-          messages.map((msg, idx) => (
-            <div key={idx} style={{ marginBottom: 6 }}>
-              <span style={{ color: '#00ff88', fontWeight: 'bold' }}>
-                {msg.username}
-              </span>
-              <span style={{ color: '#888', fontSize: 9, marginLeft: 4 }}>
-                [{msg.pkg}]
-              </span>
-              <div style={{ color: '#00ffff', wordWrap: 'break-word', marginLeft: 4 }}>
-                {msg.text}
-              </div>
-            </div>
-          ))
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Typing indicator */}
-      {typingList.length > 0 && (
-        <div style={{
-          padding: '4px 12px',
-          fontSize: 10,
-          color: '#00aa88',
-          borderBottom: '1px solid #003333',
-          fontStyle: 'italic',
-        }}>
-          {typingList.length === 1 ? 'User is typing...' : 'Multiple users typing...'}
-        </div>
-      )}
-
-      {/* Quick messages */}
-      <div style={{
-        display: 'flex',
-        gap: 4,
-        padding: '8px 12px',
-        flexWrap: 'wrap',
-        borderBottom: '1px solid #003333',
-      }}>
-        {QUICK_MESSAGES.map((msg) => (
-          <button
-            key={msg}
-            onClick={() => handleQuickMessage(msg)}
-            style={{
-              height: 35,
-              padding: '0 8px',
-              background: 'rgba(0,20,20,0.8)',
-              border: '1px solid #00ffff',
-              color: '#00ffff',
-              borderRadius: 20,
-              fontSize: 10,
-              fontFamily: "'Courier New', monospace",
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(0,40,40,0.9)';
-              e.target.style.boxShadow = '0 0 8px #00ffff';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(0,20,20,0.8)';
-              e.target.style.boxShadow = 'none';
-            }}
-          >
-            {msg}
-          </button>
-        ))}
-      </div>
-
-      {/* Input area */}
-      <div style={{
-        display: 'flex',
-        gap: 6,
-        padding: '8px 12px',
-      }}>
-        <input
-          type="text"
-          value={inputValue}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          placeholder="Type message..."
-          maxLength={CHAR_LIMIT}
-          style={{
-            flex: 1,
-            background: 'rgba(0,0,0,0.5)',
-            border: '1px solid #00ffff',
-            borderRadius: 4,
-            color: '#00ffff',
-            padding: '6px 8px',
-            fontSize: 11,
-            fontFamily: "'Courier New', monospace",
-            outline: 'none',
-          }}
-          onFocus={(e) => {
-            e.target.style.borderColor = '#00ff88';
-            e.target.style.boxShadow = '0 0 8px rgba(0,255,136,0.3)';
-          }}
-          onBlur={(e) => {
-            e.target.style.borderColor = '#00ffff';
-            e.target.style.boxShadow = 'none';
-          }}
-        />
+      {/* Collapsed state */}
+      {isCollapsed && (
         <button
-          onClick={handleSend}
+          onClick={() => setIsCollapsed(false)}
           style={{
-            padding: '6px 12px',
-            background: 'rgba(0,255,255,0.1)',
-            border: '1px solid #00ffff',
+            width: 56,
+            height: 56,
+            borderRadius: '50%',
+            background: 'rgba(0,255,255,0.15)',
+            border: '2px solid #00ffff',
             color: '#00ffff',
-            borderRadius: 4,
-            fontSize: 11,
-            fontFamily: "'Courier New', monospace",
             cursor: 'pointer',
+            fontSize: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             transition: 'all 0.2s',
+            boxShadow: '0 0 20px rgba(0,255,255,0.2)',
           }}
           onMouseEnter={(e) => {
-            e.target.style.background = 'rgba(0,255,255,0.2)';
-            e.target.style.boxShadow = '0 0 8px #00ffff';
+            e.target.style.background = 'rgba(0,255,255,0.25)';
+            e.target.style.boxShadow = '0 0 30px rgba(0,255,255,0.5)';
           }}
           onMouseLeave={(e) => {
-            e.target.style.background = 'rgba(0,255,255,0.1)';
-            e.target.style.boxShadow = 'none';
+            e.target.style.background = 'rgba(0,255,255,0.15)';
+            e.target.style.boxShadow = '0 0 20px rgba(0,255,255,0.2)';
           }}
+          title="Open chat"
         >
-          Send
+          💬
         </button>
-      </div>
+      )}
 
-      {/* Char counter */}
-      <div style={{
-        fontSize: 9,
-        color: '#666',
-        padding: '4px 12px',
-        textAlign: 'right',
-      }}>
-        {inputValue.length}/{CHAR_LIMIT}
-      </div>
+      {/* Expanded state */}
+      {!isCollapsed && (
+        <div style={{
+          width: isMobile ? 'min(90vw, 280px)' : 280,
+          maxHeight: isMobile ? '50vh' : 420,
+          background: 'rgba(0,0,0,0.9)',
+          border: '1px solid #00ffff',
+          borderRadius: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          color: '#00ffff',
+          boxShadow: '0 0 30px rgba(0,255,255,0.2)',
+        }}>
+          {/* Header */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '8px 12px',
+            borderBottom: '1px solid #003333',
+            fontSize: 11,
+            fontWeight: 'bold',
+          }}>
+            <span>CHAT</span>
+            <button
+              onClick={() => setIsCollapsed(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#00ffff',
+                cursor: 'pointer',
+                fontSize: 14,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '8px 12px',
+            fontSize: 10,
+            minHeight: 80,
+            maxHeight: 160,
+            borderBottom: '1px solid #003333',
+          }}>
+            {messages.length === 0 ? (
+              <div style={{ color: '#555', fontSize: 9, textAlign: 'center', marginTop: 15 }}>
+                no messages
+              </div>
+            ) : (
+              messages.map((msg, idx) => (
+                <div key={idx} style={{ marginBottom: 5, lineHeight: 1.3 }}>
+                  <span style={{ color: '#00ff88', fontWeight: 'bold', fontSize: 9 }}>
+                    {msg.username}
+                  </span>
+                  <div style={{ color: '#00ffff', fontSize: 9, marginLeft: 2 }}>
+                    {msg.text}
+                  </div>
+                </div>
+              ))
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Typing */}
+          {typingList.length > 0 && (
+            <div style={{
+              padding: '4px 12px',
+              fontSize: 9,
+              color: '#00aa88',
+              borderBottom: '1px solid #003333',
+              fontStyle: 'italic',
+            }}>
+              typing...
+            </div>
+          )}
+
+          {/* Quick buttons - more compact */}
+          <div style={{
+            display: 'flex',
+            gap: 4,
+            padding: '6px 8px',
+            flexWrap: 'wrap',
+            borderBottom: '1px solid #003333',
+            justifyContent: 'center',
+          }}>
+            {QUICK_MESSAGES.slice(0, 3).map((msg) => (
+              <button
+                key={msg}
+                onClick={() => handleQuickMessage(msg)}
+                style={{
+                  padding: '4px 8px',
+                  background: 'rgba(0,20,20,0.6)',
+                  border: '1px solid #00ffff',
+                  color: '#00ffff',
+                  borderRadius: 12,
+                  fontSize: 8,
+                  fontFamily: "'Courier New', monospace",
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(0,40,40,0.9)';
+                  e.target.style.boxShadow = '0 0 8px #00ffff';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(0,20,20,0.6)';
+                  e.target.style.boxShadow = 'none';
+                }}
+              >
+                {msg}
+              </button>
+            ))}
+          </div>
+
+          {/* Input */}
+          <div style={{
+            display: 'flex',
+            gap: 4,
+            padding: '6px 8px',
+          }}>
+            <input
+              type="text"
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="msg..."
+              maxLength={CHAR_LIMIT}
+              style={{
+                flex: 1,
+                background: 'rgba(0,0,0,0.5)',
+                border: '1px solid #00ffff',
+                borderRadius: 4,
+                color: '#00ffff',
+                padding: '4px 6px',
+                fontSize: 9,
+                fontFamily: "'Courier New', monospace",
+                outline: 'none',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#00ff88';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#00ffff';
+              }}
+            />
+            <button
+              onClick={handleSend}
+              style={{
+                padding: '4px 8px',
+                background: 'rgba(0,255,255,0.1)',
+                border: '1px solid #00ffff',
+                color: '#00ffff',
+                borderRadius: 4,
+                fontSize: 9,
+                fontFamily: "'Courier New', monospace",
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(0,255,255,0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(0,255,255,0.1)';
+              }}
+            >
+              ↵
+            </button>
+          </div>
+
+          {/* Char counter */}
+          <div style={{
+            fontSize: 8,
+            color: '#555',
+            padding: '2px 8px',
+            textAlign: 'right',
+          }}>
+            {inputValue.length}/{CHAR_LIMIT}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

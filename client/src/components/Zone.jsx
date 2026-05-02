@@ -103,8 +103,8 @@ export default function Zone({ name, position, color, label, onEnter }) {
         </Text>
       )}
 
-      {/* Point light inside zone */}
-      <pointLight position={[0, 2, 0]} color={color} intensity={hovered ? 1.5 : 0.6} distance={8} />
+      {/* Point light inside zone (enhanced glow) */}
+      <pointLight position={[0, 2, 0]} color={color} intensity={hovered ? 2 : 0.8} distance={12} decay={2} />
     </group>
   );
 }
